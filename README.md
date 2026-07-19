@@ -112,4 +112,4 @@ This is a genuine, working desktop app — not a UI mockup. Everything below eit
 
 ## License
 
-MIT
+All Rights Reserved © shaswatxd — see [LICENSE](LICENSE). This is source-available, not open source: viewing the code doesn't grant permission to use, copy, modify, or redistribute it.

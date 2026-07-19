@@ -2,8 +2,8 @@
   "name": "setupforge",
   "version": "0.1.0",
   "description": "SetupForge — one-click Windows software installer and PC setup manager",
-  "author": "SetupForge",
-  "license": "MIT",
+  "author": "shaswatxd",
+  "license": "UNLICENSED",
   "main": "out/main/index.js",
   "private": true,
   "scripts": {
