@@ -53,7 +53,7 @@ for (const dir of ['out', 'release']) {
 // 4. Build + package + publish to GitHub Releases.
 run('npm run build')
 const token = githubToken()
-run('npx electron-builder --win nsis --publish always', {
+run('npx electron-builder --win nsis-web --publish always', {
   env: { ...process.env, GH_TOKEN: token, GITHUB_TOKEN: token }
 })
 
