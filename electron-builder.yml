@@ -1,11 +1,14 @@
-appId: com.setupforge.app
-productName: SetupForge
+appId: com.aioforge.app
+productName: AIOforge
 directories:
   output: release
   buildResources: build
 files:
   - out/**/*
   - package.json
+# Fixed (unversioned) artifact name so releases/latest/download/AIOforge-Setup.exe is a
+# permanent link the website can point at without updating it on every release.
+artifactName: '${productName}-Setup.${ext}'
 win:
   target:
     - target: nsis
@@ -23,3 +26,5 @@ publish:
   provider: github
   owner: shaswatxd
   repo: AIOforge
+  releaseType: release # publish directly instead of leaving a draft (default) so the
+  # download link and auto-updater feed work immediately after the workflow runs

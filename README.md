@@ -1,4 +1,4 @@
-# SetupForge
+# AIOforge
 
 A one-click Windows software installer and PC setup manager — Electron + React + TypeScript, styled after Windows 11 Fluent Design. Install dozens of apps at once, manage updates and uninstalls, build shareable install profiles, and tweak your PC, all from one app.
 

@@ -55,10 +55,10 @@ export function ShareDialog({ profile, onClose }: { profile: Profile | null; onC
                 <div className="mb-1 text-xs text-secondary">Share Link</div>
                 <div className="flex items-center gap-2">
                   <code className="flex-1 truncate rounded-fluent border border-subtle bg-black/5 dark:bg-white/5 px-3 py-2 text-xs">
-                    https://setupforge.app/profile/{code}
+                    https://aioforge.vercel.app/profile/{code}
                   </code>
                   <button
-                    onClick={() => copy(`https://setupforge.app/profile/${code}`, 'link')}
+                    onClick={() => copy(`https://aioforge.vercel.app/profile/${code}`, 'link')}
                     className="flex h-9 w-9 items-center justify-center rounded-fluent border border-subtle hover:bg-black/5 dark:hover:bg-white/10"
                   >
                     {copied === 'link' ? <Check size={15} className="text-emerald-500" /> : <Copy size={15} />}
@@ -68,7 +68,7 @@ export function ShareDialog({ profile, onClose }: { profile: Profile | null; onC
 
               <p className="text-xs text-secondary">
                 This code is stored locally on this machine. Send the recipient an exported profile file (Profiles →
-                Export) or connect SetupForge Cloud for cross-device codes — see README.
+                Export) or connect AIOforge Cloud for cross-device codes — see README.
               </p>
             </>
           )}

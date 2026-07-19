@@ -23,7 +23,7 @@ export function TitleBar() {
   return (
     <div className="drag flex h-9 shrink-0 items-center justify-between border-b border-subtle bg-black/[0.03] dark:bg-black/20 px-3">
       <div className="flex items-center gap-2 text-xs text-secondary">
-        <span className="font-semibold text-primary">SetupForge</span>
+        <span className="font-semibold text-primary">AIOforge</span>
       </div>
       <div className="no-drag flex items-center gap-1">
         <button

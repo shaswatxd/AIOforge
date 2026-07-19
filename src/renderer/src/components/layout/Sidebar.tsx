@@ -32,7 +32,7 @@ export function Sidebar() {
   return (
     <aside className="no-drag flex w-56 shrink-0 flex-col gap-1 border-r border-subtle bg-black/[0.02] dark:bg-white/[0.02] p-3">
       <div className="mb-2 px-2 py-1">
-        <span className="text-lg font-bold tracking-tight">SetupForge</span>
+        <span className="text-lg font-bold tracking-tight">AIOforge</span>
       </div>
       {NAV_ITEMS.map((item) => (
         <NavLink
