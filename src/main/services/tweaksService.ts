@@ -1,6 +1,7 @@
 import { spawn } from 'child_process'
 import type { TweakDefinition } from '@shared/types/system'
 import { tweaksRepo } from '../db/repositories/tweaks.repo'
+import { runElevatedPowerShell } from './packageManager/elevate'
 
 function powershell(command: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -12,6 +13,14 @@ function powershell(command: string): Promise<void> {
     child.on('error', reject)
     child.on('close', (code) => (code === 0 ? resolve() : reject(new Error(stderr.trim() || `exit code ${code}`))))
   })
+}
+
+/** Only the two tweaks that touch HKLM / enable a Windows feature need this — everything
+ *  else here is a per-user (HKCU) edit or a normal winget install that doesn't need
+ *  elevation, so it doesn't trigger a UAC prompt. */
+async function elevatedPowershell(command: string): Promise<void> {
+  const { code, output } = await runElevatedPowerShell(command)
+  if (code !== 0) throw new Error(output.trim() || `exit code ${code}`)
 }
 
 function wingetInstall(id: string): Promise<void> {
@@ -100,7 +109,7 @@ const DEFS: TweakDef[] = [
     label: 'Install WSL',
     description: 'Enables Windows Subsystem for Linux (requires a restart).',
     category: 'developer',
-    run: () => powershell(`wsl --install`)
+    run: () => elevatedPowershell(`wsl --install`)
   },
   {
     id: 'developer-mode',
@@ -108,7 +117,7 @@ const DEFS: TweakDef[] = [
     description: 'Allows sideloading apps and unlocks developer-focused OS features.',
     category: 'developer',
     run: () =>
-      powershell(
+      elevatedPowershell(
         `New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -PropertyType DWord -Value 1 -Force`
       )
   }

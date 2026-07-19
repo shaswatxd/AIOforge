@@ -20,7 +20,7 @@ const COMMON_FLAGS = [
  *  progress-bar noise (spinner/percentage redraws) so the real reason — "already
  *  installed", "no package found matching input criteria", a hash mismatch, etc. —
  *  surfaces in the UI instead of just an opaque exit code. */
-function summarizeWingetOutput(output: string): string {
+export function summarizeWingetOutput(output: string): string {
   const noise = /^[\s\-\\|/█▒░]*\d{0,3}\s*%?[\s\-\\|/█▒░]*$/
   const lines = output
     .split(/\r?\n/)

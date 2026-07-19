@@ -10,7 +10,7 @@ import { ProgressTracker, splitProgressChunk } from './progressParser'
 
 /** Same idea as wingetManager's summarizeWingetOutput — pick the last meaningful
  *  lines out of choco's output so the Queue UI shows a real reason, not just an exit code. */
-function summarizeChocoOutput(output: string): string {
+export function summarizeChocoOutput(output: string): string {
   const noise = /^[\s\-\\|/]*\d{0,3}\s*%?[\s\-\\|/]*$/
   const lines = output
     .split(/\r?\n/)

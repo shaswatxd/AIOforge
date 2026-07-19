@@ -30,7 +30,7 @@ Requires Windows 10/11 with [winget](https://learn.microsoft.com/windows/package
 npx electron-rebuild -f -w better-sqlite3
 ```
 
-**Administrator rights**: system-wide install/uninstall/tweaks need elevation — the packaged installer requests it automatically (`requestedExecutionLevel: requireAdministrator` in `electron-builder.yml`, triggers a UAC prompt on launch). In `npm run dev`, nothing elevates you automatically — run your terminal/VS Code "as Administrator" if you want uninstalls, repairs, or PC Setup tweaks to actually succeed instead of failing with things like MSI error 1603.
+**Administrator rights**: the app runs unelevated by default so normal Windows tools (screenshot utilities, window capture) can still see it — Windows blocks non-elevated tools from interacting with an always-elevated window. Only the specific actions that genuinely need machine-wide permissions (Uninstall, Repair, the "Developer Mode" and "Install WSL" tweaks) trigger a single UAC prompt for just that command, via `src/main/services/packageManager/elevate.ts` (`Start-Process -Verb RunAs`). Regular installs, browsing, and most tweaks never prompt at all.
 
 Two environment gotchas we hit while building this project, in case you hit them too:
 

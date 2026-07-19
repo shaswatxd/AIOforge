@@ -1,15 +1,29 @@
 import { APPS } from '@shared/catalog/apps'
 import type { InstalledApp, UninstallTarget } from '@shared/types/system'
 import type { QueueItem } from '@shared/types/queue'
-import { wingetManager } from './packageManager/wingetManager'
-import { chocoManager } from './packageManager/chocoManager'
+import { wingetManager, summarizeWingetOutput } from './packageManager/wingetManager'
+import { chocoManager, summarizeChocoOutput } from './packageManager/chocoManager'
 import { getAvailability } from './packageManager/packageManagerRouter'
+import { runElevated } from './packageManager/elevate'
 import { installedAppsRepo } from '../db/repositories/installedApps.repo'
 import { historyRepo } from '../db/repositories/history.repo'
 import { installQueueManager } from './installQueueManager'
 
-function managerFor(source: 'winget' | 'chocolatey') {
-  return source === 'chocolatey' ? chocoManager : wingetManager
+const WINGET_COMMON_FLAGS = ['--accept-package-agreements', '--accept-source-agreements', '--disable-interactivity']
+
+/** Uninstall/repair frequently touch machine-scope installs (MSI packages, registry
+ *  entries under HKLM) that fail with opaque errors like MSI 1603 unless elevated. Rather
+ *  than run the whole app as Administrator (which breaks screenshotting/window capture
+ *  for non-elevated tools — Windows blocks that across the privilege boundary), we ask
+ *  for elevation with a single UAC prompt only for this one command. */
+async function runElevatedPackageCommand(
+  source: 'winget' | 'chocolatey',
+  args: string[]
+): Promise<{ code: number; reason: string }> {
+  const command = source === 'chocolatey' ? 'choco' : 'winget'
+  const { code, output } = await runElevated(command, args)
+  const reason = source === 'chocolatey' ? summarizeChocoOutput(output) : summarizeWingetOutput(output)
+  return { code, reason }
 }
 
 export const uninstallService = {
@@ -60,10 +74,8 @@ export const uninstallService = {
     return results
   },
 
-  /** Works for any detected app, catalog or not — uninstall only ever needs the real
-   *  package id + which manager owns it, both of which every detectInstalled() row has. */
+  /** Elevated (single UAC prompt) — works for any detected app, catalog or not. */
   async uninstall(target: UninstallTarget): Promise<void> {
-    const manager = managerFor(target.source)
     const historyId = historyRepo.add({
       appId: target.appId ?? target.packageId,
       action: 'uninstall',
@@ -71,7 +83,12 @@ export const uninstallService = {
       startedAt: new Date().toISOString()
     })
     try {
-      await manager.uninstall(target.packageId)
+      const args =
+        target.source === 'chocolatey'
+          ? ['uninstall', target.packageId, '-y']
+          : ['uninstall', '--id', target.packageId, '-e', '--silent', '--disable-interactivity']
+      const { code, reason } = await runElevatedPackageCommand(target.source, args)
+      if (code !== 0) throw new Error(reason ? `${reason} (exit ${code})` : `Uninstall failed (exit ${code})`)
       if (target.appId) installedAppsRepo.remove(target.appId)
       historyRepo.finish(historyId, 'success')
     } catch (err) {
@@ -82,9 +99,9 @@ export const uninstallService = {
 
   /** winget/choco have no native "repair" verb — re-running install over an existing
    *  installation is the documented workaround most installers support (repairs missing
-   *  files / resets config) and is what we do here. Works for any detected app. */
+   *  files / resets config) and is what we do here. Elevated for the same reason as
+   *  uninstall(). Works for any detected app. */
   async repair(target: UninstallTarget): Promise<void> {
-    const manager = managerFor(target.source)
     const historyId = historyRepo.add({
       appId: target.appId ?? target.packageId,
       action: 'repair',
@@ -92,10 +109,12 @@ export const uninstallService = {
       startedAt: new Date().toISOString()
     })
     try {
-      await new Promise<void>((resolve, reject) => {
-        const handle = manager.install(target.packageId, () => {})
-        handle.done.then(resolve, reject)
-      })
+      const args =
+        target.source === 'chocolatey'
+          ? ['install', target.packageId, '-y']
+          : ['install', '--id', target.packageId, '-e', '--silent', ...WINGET_COMMON_FLAGS]
+      const { code, reason } = await runElevatedPackageCommand(target.source, args)
+      if (code !== 0) throw new Error(reason ? `${reason} (exit ${code})` : `Repair failed (exit ${code})`)
       historyRepo.finish(historyId, 'success')
     } catch (err) {
       historyRepo.finish(historyId, 'failed', err instanceof Error ? err.message : String(err))
