@@ -1,6 +1,6 @@
 {
   "name": "aioforge",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "AIOforge — one-click Windows software installer and PC setup manager",
   "author": "shaswatxd",
   "license": "UNLICENSED",
@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "start": "electron-vite preview",
     "pack": "npm run build && electron-builder --dir",
-    "dist": "npm run build && electron-builder"
+    "dist": "npm run build && electron-builder",
+    "push": "node scripts/release.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^11.8.1",

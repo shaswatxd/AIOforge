@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AIOforge — Set up a Windows PC in minutes</title>
+  <meta name="description" content="AIOforge installs, updates and manages dozens of Windows apps in parallel through winget and Chocolatey. Build setup profiles, tweak your PC, and deploy to a whole fleet — all from one free app." />
+  <meta property="og:title" content="AIOforge — Set up a Windows PC in minutes" />
+  <meta property="og:description" content="One-click Windows app installer and PC setup manager, built on winget and Chocolatey." />
+  <meta property="og:type" content="website" />
+  <meta name="theme-color" content="#15120e" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2315120e'/%3E%3Cpath d='M10 22 L16 8 L22 22 M12.5 17 H19.5' stroke='%23e08a4a' stroke-width='2.4' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#top" class="brand">
+        <svg class="brand-mark" viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="9" fill="url(#g1)" />
+          <path d="M10.5 22 L16 9 L21.5 22 M12.6 17.5 H19.4" stroke="#1b1006" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0" stop-color="#f4a865" />
+              <stop offset="1" stop-color="#c96a2e" />
+            </linearGradient>
+          </defs>
+        </svg>
+        AIOforge
+      </a>
+
+      <div class="nav-links">
+        <a href="#features">Features</a>
+        <a href="#profiles">Profiles</a>
+        <a href="#how">How it works</a>
+        <a href="#download">Download</a>
+      </div>
+
+      <div class="nav-cta">
+        <a class="icon-link" href="https://github.com/shaswatxd/AIOforge" target="_blank" rel="noopener" aria-label="View source on GitHub">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.73.5.75 5.48.75 11.75c0 5.02 3.26 9.28 7.78 10.78.57.1.78-.25.78-.55v-2.1c-3.17.69-3.84-1.36-3.84-1.36-.52-1.32-1.27-1.67-1.27-1.67-1.04-.71.08-.7.08-.7 1.15.08 1.75 1.18 1.75 1.18 1.02 1.75 2.68 1.24 3.33.95.1-.74.4-1.24.72-1.53-2.53-.29-5.19-1.27-5.19-5.63 0-1.24.44-2.26 1.17-3.05-.12-.29-.51-1.45.11-3.02 0 0 .96-.31 3.14 1.16a10.9 10.9 0 0 1 5.72 0c2.18-1.47 3.14-1.16 3.14-1.16.62 1.57.23 2.73.11 3.02.73.79 1.17 1.81 1.17 3.05 0 4.37-2.67 5.33-5.21 5.62.41.36.77 1.06.77 2.14v3.17c0 .3.2.66.79.55A11.26 11.26 0 0 0 23.25 11.75C23.25 5.48 18.27.5 12 .5Z"/></svg>
+        </a>
+        <a class="btn btn-primary btn-sm" href="https://github.com/shaswatxd/AIOforge/releases/latest/download/AIOforge-Setup.exe">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/></svg>
+          Download
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <main id="top">
+
+    <!-- ================= HERO ================= -->
+    <section class="hero">
+      <div class="hero-glow"></div>
+      <div class="container hero-grid">
+        <div>
+          <span class="eyebrow">For Windows 10 &amp; 11</span>
+          <h1>Set up a Windows PC in <em>minutes</em>, not an afternoon.</h1>
+          <p class="hero-sub">
+            AIOforge installs, updates and manages dozens of apps in parallel, straight through
+            winget and Chocolatey. Pick a stack, hit install, and go make coffee.
+          </p>
+          <div class="hero-actions">
+            <a class="btn btn-primary" href="https://github.com/shaswatxd/AIOforge/releases/latest/download/AIOforge-Setup.exe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/shaswatxd/AIOforge" target="_blank" rel="noopener">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>
+              View source
+            </a>
+          </div>
+          <div class="hero-meta">
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M8 22h8M12 18v4"/></svg>Windows 10 / 11 · x64</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5Z"/></svg>Free, source-available</span>
+            <span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-6.22-8.56"/><path d="M21 3v6h-6"/></svg>Auto-updates itself</span>
+          </div>
+        </div>
+
+        <div class="reveal">
+          <div class="mock">
+            <div class="float-chip one">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+              7 apps installed
+            </div>
+            <div class="float-chip two">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4m0 12v4M4.9 4.9l2.8 2.8m8.6 8.6 2.8 2.8M2 12h4m12 0h4M4.9 19.1l2.8-2.8m8.6-8.6 2.8-2.8"/></svg>
+              Live progress
+            </div>
+            <div class="mock-bar">
+              <span class="mock-dot"></span><span class="mock-dot"></span><span class="mock-dot"></span>
+              <span class="mock-title">AIOforge</span>
+            </div>
+            <div class="mock-body">
+              <div class="mock-side">
+                <div class="m-item active"></div>
+                <div class="m-item"></div>
+                <div class="m-item"></div>
+                <div class="m-item"></div>
+                <div class="m-item"></div>
+              </div>
+              <div class="mock-main">
+                <div class="mock-search"></div>
+                <div class="mock-cards">
+                  <div class="mock-card">
+                    <div class="m-logo" style="background:linear-gradient(135deg,#e08a4a,#9c5a26)"></div>
+                    <div class="m-line"></div>
+                    <div class="m-line short"></div>
+                  </div>
+                  <div class="mock-card">
+                    <div class="m-logo" style="background:linear-gradient(135deg,#6ea8d8,#3d6ea3)"></div>
+                    <div class="m-line"></div>
+                    <div class="m-line short"></div>
+                  </div>
+                  <div class="mock-card">
+                    <div class="m-logo" style="background:linear-gradient(135deg,#7fb069,#4d7a37)"></div>
+                    <div class="m-line"></div>
+                    <div class="m-line short"></div>
+                  </div>
+                </div>
+                <div class="mock-queue">
+                  <div class="m-logo" style="width:22px;height:22px;background:linear-gradient(135deg,#e08a4a,#9c5a26)"></div>
+                  <div class="mock-progress"><span></span></div>
+                  <span class="mock-badge">64%</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= TRUST STRIP ================= -->
+    <div class="trust-strip">
+      <div class="container trust-inner reveal">
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v2M16 4v2"/></svg>
+          Real winget &amp; Chocolatey calls
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8 12.5 10.5 15 16 9"/></svg>
+          Authenticode-verified installers
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h9l5 5v10.5a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2Z"/><path d="M14 4v5h5"/></svg>
+          100+ apps, 14 categories
+        </div>
+        <div class="trust-item">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H7a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Source-available on GitHub
+        </div>
+      </div>
+    </div>
+
+    <!-- ================= FEATURES ================= -->
+    <section id="features">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">Everything, in one window</span>
+          <h2>Not a shortcut to installers.<br />An actual replacement for them.</h2>
+          <p>Every action below runs a real command against winget or Chocolatey — there's no fake progress bar hiding a manual download somewhere.</p>
+        </div>
+
+        <div class="features-grid reveal">
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            </div>
+            <h3>One-Click Catalog</h3>
+            <p>Browse 100+ apps across browsers, IDEs, databases, DevOps tools and more. Search, filter by category, favorite what you use.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="6" rx="1.5"/><rect x="3" y="14" width="18" height="6" rx="1.5"/><path d="M7 7h.01M7 17h.01"/></svg>
+            </div>
+            <h3>Real Install Queue</h3>
+            <p>Concurrent downloads with live speed and ETA. Pause, resume, cancel or retry any item — the queue survives a closed window.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 10.5 6.8-3.9M8.6 13.5l6.8 3.9"/></svg>
+            </div>
+            <h3>Setup Profiles</h3>
+            <p>Bundle your whole toolchain — "React Developer," "Data Science," your own mix — install it in one click, share it with a code.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><path d="M21 3v6h-6"/></svg>
+            </div>
+            <h3>Update Manager</h3>
+            <p>Scans everything installed against winget/Chocolatey and shows exactly what's behind. Update one, a few, or all of it.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-.9 13.2A2 2 0 0 1 16.1 21H7.9a2 2 0 0 1-2-1.8L5 6"/></svg>
+            </div>
+            <h3>Uninstall Manager</h3>
+            <p>Live-detects what's actually installed on your machine — not just what you installed through AIOforge — and lets you uninstall, repair or reinstall it.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 1.9 4.3 4.6.5-3.5 3.1 1 4.6-4-2.4-4 2.4 1-4.6-3.5-3.1 4.6-.5L12 3Z"/></svg>
+            </div>
+            <h3>PC Setup Tweaks</h3>
+            <p>Dark mode, file extensions, Windows Terminal, PowerShell 7, WSL, Developer Mode — real registry edits and real installs, not decoration.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 8v13H3V8M1 3h22v5H1zM10 12h4"/></svg>
+            </div>
+            <h3>Backup &amp; Restore</h3>
+            <p>Snapshot your installed apps, profiles and settings with a checksum. Restore the whole thing on a fresh machine in one click.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>
+            </div>
+            <h3>Admin Deployment</h3>
+            <p>Generate a PowerShell rollout script — and optionally the installers themselves — to set up a whole fleet of PCs the same way.</p>
+          </div>
+          <div class="feature">
+            <div class="feature-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v6c0 5 4 8 9 9 5-1 9-4 9-9V7l-9-5Z"/><path d="m9 12 2 2 4-4"/></svg>
+            </div>
+            <h3>Built on Trust</h3>
+            <p>Every install runs through winget or Chocolatey's own signature verification. AIOforge never runs unsigned code of its own.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROFILES SHOWCASE ================= -->
+    <section id="profiles">
+      <div class="container showcase">
+        <div class="reveal">
+          <span class="eyebrow">Setup profiles</span>
+          <h2 style="font-size: clamp(28px,3.2vw,38px); margin-top: 14px;">Ship your whole toolchain in one click.</h2>
+          <p style="margin-top: 16px; color: var(--text-dim); font-size: 16px; line-height: 1.7;">
+            Nine starter packs come built in, or build your own from any mix of the catalog.
+            Install a profile and every app in it lands in the queue at once — no clicking
+            through nine separate installers.
+          </p>
+          <a class="btn btn-ghost btn-sm" style="margin-top:26px" href="https://github.com/shaswatxd/AIOforge#feature-tour" target="_blank" rel="noopener">
+            See what's in each pack
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        </div>
+
+        <div class="pack-list reveal">
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#6ea8d8,#3d6ea3)">RD</div>
+            <span class="pack-name">React Developer</span>
+            <span class="pack-count">8 apps</span>
+          </div>
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#e08a4a,#9c5a26)">DV</div>
+            <span class="pack-name">Developer Pack</span>
+            <span class="pack-count">7 apps</span>
+          </div>
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#7fb069,#4d7a37)">PY</div>
+            <span class="pack-name">Python Pack</span>
+            <span class="pack-count">4 apps</span>
+          </div>
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#c97fc9,#7a4a9c)">DS</div>
+            <span class="pack-name">Data Science Pack</span>
+            <span class="pack-count">5 apps</span>
+          </div>
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#e0c24a,#9c8226)">GM</div>
+            <span class="pack-name">Gaming Pack</span>
+            <span class="pack-count">6 apps</span>
+          </div>
+          <div class="pack-row">
+            <div class="pack-dot" style="background:linear-gradient(135deg,#d86e6e,#a33d3d)">CY</div>
+            <span class="pack-name">Cybersecurity Pack</span>
+            <span class="pack-count">6 apps</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HOW IT WORKS ================= -->
+    <section id="how">
+      <div class="container">
+        <div class="section-head reveal">
+          <span class="eyebrow">How it works</span>
+          <h2>Three steps. No wizard fatigue.</h2>
+        </div>
+
+        <div class="steps reveal">
+          <div class="step">
+            <div class="step-line"></div>
+            <h3>Download &amp; install</h3>
+            <p>Grab the installer, run it — it'll ask for admin rights once, since that's what real system-wide installs need — and AIOforge opens.</p>
+          </div>
+          <div class="step">
+            <div class="step-line"></div>
+            <h3>Pick your apps</h3>
+            <p>Search the catalog, star your favorites, or grab a ready-made profile like "React Developer" or "Student Pack."</p>
+          </div>
+          <div class="step">
+            <h3>Let the queue work</h3>
+            <p>Installs run in the background with real progress, speed and ETA. Close the window — the queue keeps going.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DOWNLOAD ================= -->
+    <section id="download">
+      <div class="container">
+        <div class="download reveal">
+          <span class="eyebrow">Get AIOforge</span>
+          <h2>Ready when you are.</h2>
+          <p>Free to download. Takes about a minute to install, and it'll keep itself updated from here.</p>
+          <div class="download-actions">
+            <a class="btn btn-primary" href="https://github.com/shaswatxd/AIOforge/releases/latest/download/AIOforge-Setup.exe">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0 5-5m-5 5-5-5"/><path d="M4 21h16"/></svg>
+              Download for Windows
+            </a>
+            <a class="btn btn-ghost" href="https://github.com/shaswatxd/AIOforge/releases" target="_blank" rel="noopener">
+              Release notes &amp; older versions
+            </a>
+          </div>
+          <p class="download-note">Windows 10/11 · 64-bit · ~93 MB · Signed installer prompts for admin rights on first run</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <svg viewBox="0 0 32 32" fill="none">
+          <rect width="32" height="32" rx="9" fill="url(#g2)" />
+          <path d="M10.5 22 L16 9 L21.5 22 M12.6 17.5 H19.4" stroke="#1b1006" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          <defs>
+            <linearGradient id="g2" x1="0" y1="0" x2="32" y2="32">
+              <stop offset="0" stop-color="#f4a865" /><stop offset="1" stop-color="#c96a2e" />
+            </linearGradient>
+          </defs>
+        </svg>
+        AIOforge
+      </div>
+      <div class="footer-links">
+        <a href="https://github.com/shaswatxd/AIOforge" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/shaswatxd/AIOforge/releases" target="_blank" rel="noopener">Releases</a>
+        <a href="https://github.com/shaswatxd/AIOforge/blob/master/LICENSE" target="_blank" rel="noopener">License</a>
+      </div>
+      <div style="color: var(--text-faint); font-size: 13px;">© 2026 AIOforge. All rights reserved.</div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
