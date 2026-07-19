@@ -1,0 +1,47 @@
+PackageIdentifier: JesseDuffield.lazygit
+PackageVersion: 0.63.1
+Moniker: lazygit
+Tags:
+- cli
+- cross-platform
+- git
+- git-client
+- open-source
+- terminal-app
+PackageLocale: en-US
+Author: Jesse Duffield
+Copyright: Copyright (c) 2018 Jesse Duffield
+CopyrightUrl: https://raw.githubusercontent.com/jesseduffield/lazygit/master/LICENSE
+ShortDescription: Simple terminal UI for git commands.
+License: MIT
+LicenseUrl: https://github.com/jesseduffield/lazygit/blob/HEAD/LICENSE
+PackageName: lazygit
+PackageUrl: https://github.com/jesseduffield/lazygit
+Publisher: Jesse Duffield
+PublisherSupportUrl: https://github.com/jesseduffield/lazygit/issues
+PublisherUrl: https://github.com/jesseduffield
+ReleaseNotes: "Fixes for a few regressions introduced in the v0.63.0 release.\nWhat's
+  Changed\n\nFixes \U0001F527\n- Improve index.lock retry mechanism by @stefanhaller
+  in #5788\n- Fix userEvents panic by @stefanhaller in #5793\n- Fix a deadlock on
+  Windows when switching between longer diffs by @stefanhaller in #5815\n\nMaintenance
+  \u2699\uFE0F\n- Allow releasing from a branch other than master by @stefanhaller
+  in #5819"
+ReleaseNotesUrl: https://github.com/jesseduffield/lazygit/releases/tag/v0.63.1
+Installers:
+- Architecture: x64
+  InstallerType: zip
+  NestedInstallerType: portable
+  InstallerSha256: 230721fb5f0d5c0e91555bd4bd76f5213477b116027f1c0fe222b70d49f58ea0
+  InstallerUrl: https://github.com/jesseduffield/lazygit/releases/download/v0.63.1/lazygit_0.63.1_Windows_x86_64.zip
+  ReleaseDate: 2026-07-15
+  InstallerAbortsTerminal: false
+  InstallLocationRequired: false
+  RequireExplicitUpgrade: false
+  DisplayInstallWarnings: false
+  DownloadCommandProhibited: false
+  ArchiveBinariesDependOnPath: false
+  UpgradeBehavior: install
+  NestedInstallerFiles:
+  - RelativeFilePath: lazygit.exe
+ManifestVersion: 1.12.0
+ManifestType: merged

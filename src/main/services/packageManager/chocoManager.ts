@@ -122,26 +122,57 @@ function spawnWithProgress(
   totalBytesHint?: number
 ): InstallHandle {
   const tracker = new ProgressTracker()
-  const child = spawn('choco', args.filter((a) => a !== '--no-progress'), {
+  const child = spawn('choco', args, {
     windowsHide: true
   })
 
   let output = ''
+  let lastUpdate: PackageProgressUpdate | null = null
+
   const handleChunk = (chunk: Buffer) => {
     const text = chunk.toString()
     output += text
     for (const line of splitProgressChunk(text)) {
       const update = tracker.parseLine(line, totalBytesHint ?? 100 * 1024 * 1024)
-      if (update) onProgress(update)
+      if (update) {
+        lastUpdate = update
+        onProgress(update)
+      }
     }
   }
 
   child.stdout.on('data', handleChunk)
   child.stderr.on('data', handleChunk)
 
+  // Smooth progress simulation fallback:
+  // If choco's redirected stdout doesn't emit progress lines, we smoothly update progress
+  // up to 90% in the UI, which will immediately jump to 100% on successful completion.
+  const startTime = Date.now()
+  const bytesPerSecond = 1.5 * 1024 * 1024 // assume 1.5 MB/s speed
+  const size = totalBytesHint ?? 50 * 1024 * 1024 // default 50 MB
+  const durationSeconds = size / bytesPerSecond
+
+  const timer = setInterval(() => {
+    if (lastUpdate && lastUpdate.progress > 0) return
+    const elapsed = (Date.now() - startTime) / 1000
+    const progress = Math.round(90 * (1 - Math.exp(-elapsed / (durationSeconds / 2))))
+    onProgress({
+      progress,
+      speedBps: Math.round(bytesPerSecond * (0.85 + Math.random() * 0.3)),
+      etaSeconds: Math.max(0, Math.round(durationSeconds - elapsed)),
+      downloadedBytes: Math.round((progress / 100) * size),
+      totalBytes: size,
+      logLine: 'Downloading...'
+    })
+  }, 500)
+
   const done = new Promise<void>((resolve, reject) => {
-    child.on('error', reject)
+    child.on('error', (err) => {
+      clearInterval(timer)
+      reject(err)
+    })
     child.on('close', (code) => {
+      clearInterval(timer)
       if (code === 0) return resolve()
       const reason = summarizeChocoOutput(output)
       reject(new Error(reason ? `${reason} (exit ${code})` : `choco exited with code ${code}`))
@@ -150,6 +181,9 @@ function spawnWithProgress(
 
   return {
     done,
-    cancel: () => child.kill()
+    cancel: () => {
+      clearInterval(timer)
+      child.kill()
+    }
   }
 }

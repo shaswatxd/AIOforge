@@ -52,7 +52,7 @@ export function runElevated(command: string, args: string[]): Promise<{ code: nu
     // avoiding the incompatible combination of -Verb RunAs and -RedirectStandardOutput in Start-Process.
     const cmdArgs = [
       '/c',
-      `"${command}" ` + args.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(' ') + ` > "${outFile}" 2> "${errFile}"`
+      `""${command}" ` + args.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(' ') + ` > "${outFile}" 2> "${errFile}""`
     ]
     const argList = '@(' + cmdArgs.map((a) => `'${a.replace(/'/g, "''")}'`).join(',') + ')'
     const psCommand =
