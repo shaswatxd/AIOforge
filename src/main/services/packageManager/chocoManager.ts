@@ -122,7 +122,7 @@ function spawnWithProgress(
   totalBytesHint?: number
 ): InstallHandle {
   const tracker = new ProgressTracker()
-  const child = spawn('choco', args, {
+  const child = spawn('choco', args.filter((a) => a !== '--no-progress'), {
     windowsHide: true
   })
 
