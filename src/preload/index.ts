@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import type { SetupForgeApi } from '@shared/types/ipc'
 import type { QueueProgressEvent } from '@shared/types/queue'
+import type { AppUpdateStatus } from '@shared/types/system'
 
 const api: SetupForgeApi = {
   catalog: {
@@ -46,9 +47,9 @@ const api: SetupForgeApi = {
   },
   uninstall: {
     detectInstalled: () => ipcRenderer.invoke('uninstall:detectInstalled'),
-    uninstall: (appId) => ipcRenderer.invoke('uninstall:uninstall', appId),
-    repair: (appId) => ipcRenderer.invoke('uninstall:repair', appId),
-    reinstall: (appId) => ipcRenderer.invoke('uninstall:reinstall', appId)
+    uninstall: (target) => ipcRenderer.invoke('uninstall:uninstall', target),
+    repair: (target) => ipcRenderer.invoke('uninstall:repair', target),
+    reinstall: (target) => ipcRenderer.invoke('uninstall:reinstall', target)
   },
   tweaks: {
     list: () => ipcRenderer.invoke('tweaks:list'),
@@ -76,6 +77,16 @@ const api: SetupForgeApi = {
     pickOpenFile: () => ipcRenderer.invoke('system:pickOpenFile'),
     openExternal: (url) => ipcRenderer.invoke('system:openExternal', url),
     getAppVersion: () => ipcRenderer.invoke('system:getAppVersion')
+  },
+  app: {
+    checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),
+    downloadUpdate: () => ipcRenderer.invoke('app:downloadUpdate'),
+    quitAndInstall: () => ipcRenderer.invoke('app:quitAndInstall'),
+    onUpdateStatus: (cb) => {
+      const listener = (_e: Electron.IpcRendererEvent, status: AppUpdateStatus) => cb(status)
+      ipcRenderer.on('app:updateStatus', listener)
+      return () => ipcRenderer.removeListener('app:updateStatus', listener)
+    }
   }
 }
 

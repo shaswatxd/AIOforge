@@ -13,6 +13,11 @@ interface Row {
 function toDomain(row: Row): InstalledApp {
   return {
     appId: row.app_id,
+    // This table is AIOforge's own install bookkeeping, keyed by our id (catalog slug or,
+    // for non-catalog apps, the raw package id itself) — not a live scan, so it doesn't
+    // separately track the real winget/choco id for catalog apps. Live detection (used
+    // for anything actionable) goes through uninstallService.detectInstalled() instead.
+    packageId: row.app_id,
     name: row.name,
     version: row.version,
     installedAt: row.installed_at,

@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import type { UninstallTarget } from '@shared/types/system'
 import { queryKeys } from '../lib/queryClient'
 
 export function useInstalledApps() {
   return useQuery({ queryKey: queryKeys.installedApps, queryFn: () => window.api.uninstall.detectInstalled() })
 }
 
-function useInvalidatingAction(fn: (appId: string) => Promise<unknown>) {
+function useInvalidatingAction(fn: (target: UninstallTarget) => Promise<unknown>) {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: fn,
@@ -14,15 +15,15 @@ function useInvalidatingAction(fn: (appId: string) => Promise<unknown>) {
 }
 
 export function useUninstallApp() {
-  return useInvalidatingAction((appId) => window.api.uninstall.uninstall(appId))
+  return useInvalidatingAction((target) => window.api.uninstall.uninstall(target))
 }
 export function useRepairApp() {
-  return useInvalidatingAction((appId) => window.api.uninstall.repair(appId))
+  return useInvalidatingAction((target) => window.api.uninstall.repair(target))
 }
 export function useReinstallApp() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: (appId: string) => window.api.uninstall.reinstall(appId),
+    mutationFn: (target: UninstallTarget) => window.api.uninstall.reinstall(target),
     onSuccess: () => qc.invalidateQueries({ queryKey: queryKeys.queueList })
   })
 }

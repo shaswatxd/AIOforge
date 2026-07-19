@@ -92,7 +92,7 @@ app.whenReady().then(() => {
   registerSystemIpc(() => mainWindow)
 
   createWindow()
-  initAutoUpdater()
+  initAutoUpdater(() => mainWindow)
   startBackgroundUpdateChecking()
 
   app.on('activate', () => {

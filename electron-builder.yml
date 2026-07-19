@@ -11,17 +11,26 @@ files:
 artifactName: '${productName}-Setup.${ext}'
 win:
   target:
-    - target: nsis
+    # nsis-web: a tiny (~a few MB) stub installer that downloads the actual app package
+    # from the GitHub release during setup, instead of bundling the full ~90MB inside the
+    # installer exe — same idea as Discord/Chrome's web installers.
+    - target: nsis-web
       arch:
         - x64
-  # icon: build/icon.ico   # add a real .ico before packaging — see README
+  icon: build/icon.ico
   # System-wide installs/uninstalls (winget/choco/registry tweaks) need admin rights —
   # without this the packaged app launches unelevated and installers fail with generic
   # errors like MSI 1603 "insufficient privileges". Windows will UAC-prompt on launch.
   requestedExecutionLevel: requireAdministrator
 nsis:
-  oneClick: false
-  allowToChangeInstallationDirectory: true
+  # Discord/Slack-style installer: no wizard pages, just a small animated "Installing…"
+  # window that installs per-user (no UAC needed for the install step itself) and
+  # launches the app when done.
+  oneClick: true
+  perMachine: false
+  allowToChangeInstallationDirectory: false
+  createDesktopShortcut: always
+  runAfterFinish: true
 publish:
   provider: github
   owner: shaswatxd

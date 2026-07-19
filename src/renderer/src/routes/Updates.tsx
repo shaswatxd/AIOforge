@@ -15,12 +15,15 @@ export function Updates() {
   const pushToast = useUiStore((s) => s.pushToast)
   const [selected, setSelected] = useState<Set<string>>(new Set())
 
-  const apps = (scan?.apps ?? []).filter((a) => a.appId)
+  // Every real update winget/Chocolatey reports shows up here — not just the ones that
+  // happen to be in the curated catalog — so the count here always matches what "Update
+  // All" actually acts on.
+  const apps = scan?.apps ?? []
 
-  const toggle = (appId: string) => {
+  const toggle = (packageId: string) => {
     setSelected((prev) => {
       const next = new Set(prev)
-      next.has(appId) ? next.delete(appId) : next.add(appId)
+      next.has(packageId) ? next.delete(packageId) : next.add(packageId)
       return next
     })
   }
@@ -77,29 +80,30 @@ export function Updates() {
               }
               className="flex items-center gap-2 rounded-fluent bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
             >
-              <DownloadCloud size={15} /> Update All
+              <DownloadCloud size={15} /> Update All ({apps.length})
             </button>
           </div>
 
           <div className="flex flex-col gap-2">
             {apps.map((app) => (
               <label
-                key={app.appId}
+                key={app.packageId}
                 className="flex items-center gap-3 rounded-fluent border border-subtle p-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
               >
                 <input
                   type="checkbox"
-                  checked={selected.has(app.appId!)}
-                  onChange={() => toggle(app.appId!)}
+                  checked={selected.has(app.packageId)}
+                  onChange={() => toggle(app.packageId)}
                   className="accent-accent"
                 />
-                <IconBadge id={app.appId!} name={app.name} size={36} />
+                <IconBadge id={app.appId ?? app.packageId} name={app.name} size={36} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{app.name}</div>
                   <div className="text-xs text-secondary">
                     {app.version} → {app.updateAvailable}
                   </div>
                 </div>
+                {!app.appId && <Badge>Not in catalog</Badge>}
                 <Badge>{app.source}</Badge>
               </label>
             ))}

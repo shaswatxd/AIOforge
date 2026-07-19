@@ -7,11 +7,23 @@ import { installedAppsRepo } from '../db/repositories/installedApps.repo'
 import { historyRepo } from '../db/repositories/history.repo'
 import { settingsRepo } from '../db/repositories/settings.repo'
 import { resolveManagerForApp, packageIdFor } from './packageManager/packageManagerRouter'
+import { wingetManager } from './packageManager/wingetManager'
+import { chocoManager } from './packageManager/chocoManager'
 import type { InstallHandle } from './packageManager/IPackageManager'
 
 export interface InstallRequest {
   appId: string
   options?: Record<string, unknown>
+}
+
+export interface UpgradeTarget {
+  /** Catalog app id, when this package happens to be one we curate. */
+  appId: string | null
+  /** Real winget/choco package id — always present, used directly when appId is null. */
+  packageId: string
+  name: string
+  source: 'winget' | 'chocolatey'
+  newVersion: string
 }
 
 interface ActiveJob {
@@ -44,6 +56,41 @@ class InstallQueueManager extends EventEmitter {
       appIds.map((appId) => ({ appId })),
       'upgrade'
     )
+  }
+
+  /** Like addUpgrades(), but works for ANY real update/app winget/Chocolatey reports —
+   *  not just apps that happen to be in our curated catalog. processNext() falls back to
+   *  the raw packageId/source stashed here when a target has no catalog appId. Used by
+   *  both the Update Manager (action='upgrade') and non-catalog reinstalls (action='install'). */
+  addPackageTargets(targets: UpgradeTarget[], action: 'install' | 'upgrade' = 'upgrade'): QueueItem[] {
+    const created: QueueItem[] = []
+    for (const t of targets) {
+      const item: QueueItem = {
+        id: randomUUID(),
+        appId: t.appId ?? t.packageId,
+        appName: t.name,
+        status: 'queued',
+        progress: 0,
+        speedBps: 0,
+        etaSeconds: null,
+        optionsJson: {
+          __action: action,
+          __packageId: t.packageId,
+          __source: t.source,
+          __newVersion: t.newVersion
+        },
+        order: queueRepo.nextOrder(),
+        createdAt: new Date().toISOString()
+      }
+      queueRepo.insert(item)
+      created.push(item)
+    }
+    void this.processNext()
+    return created
+  }
+
+  addUpgradeTargets(targets: UpgradeTarget[]): QueueItem[] {
+    return this.addPackageTargets(targets, 'upgrade')
   }
 
   private enqueue(requests: InstallRequest[], action: 'install' | 'upgrade'): QueueItem[] {
@@ -135,7 +182,13 @@ class InstallQueueManager extends EventEmitter {
     if (!next) return
 
     const app = APPS.find((a) => a.id === next.appId)
-    if (!app) {
+    // Upgrades queued via addUpgradeTargets() for apps outside the catalog carry the
+    // real winget/choco id + source directly — that's the only way to act on the other
+    // ~90% of what a system update scan finds that we don't have curated metadata for.
+    const overridePackageId = next.optionsJson?.__packageId as string | undefined
+    const overrideSource = next.optionsJson?.__source as 'winget' | 'chocolatey' | undefined
+
+    if (!app && !overridePackageId) {
       queueRepo.update(next.id, { status: 'failed', error: 'App not found in catalog' })
       this.emitProgress({ id: next.id, status: 'failed', progress: 0, speedBps: 0, etaSeconds: null, error: 'App not found' })
       void this.processNext()
@@ -144,7 +197,7 @@ class InstallQueueManager extends EventEmitter {
 
     const action: 'install' | 'upgrade' = next.optionsJson?.__action === 'upgrade' ? 'upgrade' : 'install'
     const historyId = historyRepo.add({
-      appId: app.id,
+      appId: next.appId,
       action: action === 'upgrade' ? 'update' : 'install',
       status: 'started',
       startedAt: new Date().toISOString()
@@ -155,8 +208,8 @@ class InstallQueueManager extends EventEmitter {
     this.active.set(next.id, job)
 
     try {
-      const manager = await resolveManagerForApp(app)
-      const pkgId = packageIdFor(app, manager)
+      const manager = app ? await resolveManagerForApp(app) : overrideSource === 'chocolatey' ? chocoManager : wingetManager
+      const pkgId = app ? packageIdFor(app, manager) : overridePackageId!
 
       queueRepo.update(next.id, { status: 'downloading', progress: 0 })
       this.emitProgress({ id: next.id, status: 'downloading', progress: 0, speedBps: 0, etaSeconds: null })
@@ -178,9 +231,10 @@ class InstallQueueManager extends EventEmitter {
       this.emitProgress({ id: next.id, status: 'completed', progress: 100, speedBps: 0, etaSeconds: 0 })
       historyRepo.finish(historyId, 'success')
       installedAppsRepo.upsert({
-        appId: app.id,
-        name: app.name,
-        version: app.stats.latestVersion,
+        appId: next.appId,
+        packageId: pkgId,
+        name: app?.name ?? next.appName,
+        version: app?.stats.latestVersion ?? ((next.optionsJson?.__newVersion as string) || 'unknown'),
         installedAt: new Date().toISOString(),
         source: manager.id === 'winget' ? 'winget' : 'chocolatey'
       })

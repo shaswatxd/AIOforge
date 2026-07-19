@@ -1,5 +1,8 @@
 export interface InstalledApp {
   appId: string | null // null if detected but not in catalog
+  /** The real winget/Chocolatey package id — always present, even when appId is null,
+   *  so actions (upgrade, uninstall) work on apps we don't have curated catalog data for. */
+  packageId: string
   name: string
   version: string
   installedAt: string | null
@@ -40,4 +43,23 @@ export interface AdminBundleOptions {
 export interface PackageManagerAvailability {
   winget: boolean
   chocolatey: boolean
+}
+
+/** State of AIOforge's own self-update check (electron-updater), pushed to the renderer
+ *  as it progresses so Settings can show a real "Check for Updates" flow. */
+export interface AppUpdateStatus {
+  state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
+  version?: string
+  progress?: number
+  error?: string
+}
+
+/** Identifies a package for uninstall/repair/reinstall — works for catalog apps
+ *  (appId set) and for anything else winget/Chocolatey report as installed (appId null,
+ *  packageId is the real winget/choco id instead). */
+export interface UninstallTarget {
+  appId: string | null
+  packageId: string
+  name: string
+  source: 'winget' | 'chocolatey'
 }

@@ -1,6 +1,7 @@
-import type { ReactNode } from 'react'
-import { FolderOpen, CheckCircle2, XCircle } from 'lucide-react'
+import { useEffect, useState, type ReactNode } from 'react'
+import { FolderOpen, CheckCircle2, XCircle, RefreshCw, DownloadCloud, RotateCw } from 'lucide-react'
 import { useSettings, useSetSettings, usePackageManagerAvailability } from '../queries/useSettings'
+import { useAppUpdate } from '../queries/useAppUpdate'
 import type { PackageManagerPref, ThemeMode } from '@shared/types/settings'
 
 const THEMES: { value: ThemeMode; label: string }[] = [
@@ -140,8 +141,82 @@ export function SettingsPage() {
           Automatically install updates
         </label>
       </Section>
+
+      <Section title="About AIOforge">
+        <AppUpdatePanel />
+      </Section>
     </div>
   )
+}
+
+function AppUpdatePanel() {
+  const [version, setVersion] = useState<string | null>(null)
+  const { status, checkForUpdates, downloadUpdate, quitAndInstall } = useAppUpdate()
+
+  useEffect(() => {
+    window.api.system.getAppVersion().then(setVersion)
+  }, [])
+
+  return (
+    <div className="flex flex-col gap-3 rounded-fluent border border-subtle p-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <div className="text-sm font-medium">AIOforge {version ? `v${version}` : ''}</div>
+          <div className="text-xs text-secondary">{statusLabel(status)}</div>
+        </div>
+
+        {status.state === 'downloaded' ? (
+          <button
+            onClick={() => quitAndInstall()}
+            className="flex items-center gap-2 rounded-fluent bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+          >
+            <RotateCw size={14} /> Restart &amp; Install
+          </button>
+        ) : status.state === 'available' ? (
+          <button
+            onClick={() => downloadUpdate()}
+            className="flex items-center gap-2 rounded-fluent bg-accent px-3 py-2 text-sm font-semibold text-white hover:bg-accent-hover"
+          >
+            <DownloadCloud size={14} /> Download v{status.version}
+          </button>
+        ) : (
+          <button
+            onClick={() => checkForUpdates()}
+            disabled={status.state === 'checking' || status.state === 'downloading'}
+            className="flex items-center gap-2 rounded-fluent border border-subtle px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10 disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={status.state === 'checking' ? 'animate-spin' : ''} />
+            Check for Updates
+          </button>
+        )}
+      </div>
+
+      {status.state === 'downloading' && (
+        <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
+          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${status.progress ?? 0}%` }} />
+        </div>
+      )}
+    </div>
+  )
+}
+
+function statusLabel(status: ReturnType<typeof useAppUpdate>['status']): string {
+  switch (status.state) {
+    case 'checking':
+      return 'Checking for updates…'
+    case 'available':
+      return `Version ${status.version} is available`
+    case 'not-available':
+      return "You're on the latest version"
+    case 'downloading':
+      return `Downloading update… ${status.progress ?? 0}%`
+    case 'downloaded':
+      return `Version ${status.version} downloaded — restart to install`
+    case 'error':
+      return status.error ?? 'Update check failed'
+    default:
+      return 'Automatically checks in the background on launch'
+  }
 }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {

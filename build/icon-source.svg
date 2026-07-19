@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f6b579"/>
+      <stop offset="0.55" stop-color="#e08a4a"/>
+      <stop offset="1" stop-color="#a8551f"/>
+    </linearGradient>
+    <linearGradient id="mark" x1="0" y1="0" x2="0" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2a1a0d"/>
+      <stop offset="1" stop-color="#140b04"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="18%" r="65%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <rect width="512" height="512" rx="112" fill="url(#glow)"/>
+
+  <!-- forge mark: an upward peak (anvil / "A" monogram) with a spark -->
+  <path d="M256 122 L367 388 L316 388 L256 240 L196 388 L145 388 Z"
+        fill="url(#mark)"/>
+  <rect x="207" y="308" width="98" height="34" rx="10" fill="url(#mark)"/>
+
+  <circle cx="341" cy="150" r="17" fill="#fff4e6"/>
+  <circle cx="341" cy="150" r="17" fill="#ffffff" opacity="0.55"/>
+</svg>

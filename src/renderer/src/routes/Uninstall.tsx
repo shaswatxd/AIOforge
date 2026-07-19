@@ -9,6 +9,11 @@ import {
   useReinstallApp
 } from '../queries/useUninstall'
 import { useUiStore } from '../state/uiStore'
+import type { InstalledApp, UninstallTarget } from '@shared/types/system'
+
+function toTarget(app: InstalledApp): UninstallTarget {
+  return { appId: app.appId, packageId: app.packageId, name: app.name, source: app.source as 'winget' | 'chocolatey' }
+}
 
 export function Uninstall() {
   const { data: apps, isFetching, refetch } = useInstalledApps()
@@ -38,7 +43,9 @@ export function Uninstall() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold">Uninstall Manager</h1>
-          <p className="text-sm text-secondary">Detected via winget/Chocolatey — uninstall, repair, or reinstall any app.</p>
+          <p className="text-sm text-secondary">
+            Detected via winget/Chocolatey — uninstall, repair, or reinstall any app, catalog or not.
+          </p>
         </div>
         <button
           onClick={() => refetch()}
@@ -66,44 +73,42 @@ export function Uninstall() {
       ) : (
         <div className="flex flex-col gap-2">
           {filtered.map((app) => {
-            const id = app.appId ?? app.name
+            const id = app.packageId
             const isBusy = busyId === id
+            const target = toTarget(app)
             return (
               <div key={id} className="flex items-center gap-3 rounded-fluent border border-subtle p-3">
-                <IconBadge id={app.appId ?? app.name} name={app.name} size={36} />
+                <IconBadge id={app.appId ?? app.packageId} name={app.name} size={36} />
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">{app.name}</div>
                   <div className="text-xs text-secondary">v{app.version}</div>
                 </div>
+                {!app.appId && <Badge>Not in catalog</Badge>}
                 <Badge>{app.source}</Badge>
-                {app.appId ? (
-                  <div className="flex gap-1.5">
-                    <ActionButton
-                      title="Repair"
-                      disabled={isBusy}
-                      onClick={() => withBusy(id, () => repair.mutateAsync(app.appId!), `${app.name} repaired`)}
-                    >
-                      <Wrench size={14} />
-                    </ActionButton>
-                    <ActionButton
-                      title="Reinstall"
-                      disabled={isBusy}
-                      onClick={() => withBusy(id, () => reinstall.mutateAsync(app.appId!), `${app.name} queued for reinstall`)}
-                    >
-                      <RotateCw size={14} />
-                    </ActionButton>
-                    <ActionButton
-                      title="Uninstall"
-                      danger
-                      disabled={isBusy}
-                      onClick={() => withBusy(id, () => uninstall.mutateAsync(app.appId!), `${app.name} uninstalled`)}
-                    >
-                      <Trash2 size={14} />
-                    </ActionButton>
-                  </div>
-                ) : (
-                  <span className="text-xs text-secondary">Not in catalog</span>
-                )}
+                <div className="flex gap-1.5">
+                  <ActionButton
+                    title="Repair"
+                    disabled={isBusy}
+                    onClick={() => withBusy(id, () => repair.mutateAsync(target), `${app.name} repaired`)}
+                  >
+                    <Wrench size={14} />
+                  </ActionButton>
+                  <ActionButton
+                    title="Reinstall"
+                    disabled={isBusy}
+                    onClick={() => withBusy(id, () => reinstall.mutateAsync(target), `${app.name} queued for reinstall`)}
+                  >
+                    <RotateCw size={14} />
+                  </ActionButton>
+                  <ActionButton
+                    title="Uninstall"
+                    danger
+                    disabled={isBusy}
+                    onClick={() => withBusy(id, () => uninstall.mutateAsync(target), `${app.name} uninstalled`)}
+                  >
+                    <Trash2 size={14} />
+                  </ActionButton>
+                </div>
               </div>
             )
           })}

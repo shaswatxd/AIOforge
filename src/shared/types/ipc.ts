@@ -8,7 +8,9 @@ import type {
   TweakDefinition,
   BackupManifest,
   AdminBundleOptions,
-  PackageManagerAvailability
+  PackageManagerAvailability,
+  UninstallTarget,
+  AppUpdateStatus
 } from './system'
 
 export interface InstallRequest {
@@ -53,14 +55,16 @@ export interface SetupForgeApi {
   }
   updates: {
     scan: () => Promise<UpdateCheckResult>
-    updateSelected: (appIds: string[]) => Promise<QueueItem[]>
+    /** Keyed by packageId (the real winget/choco id) — covers every update found, not
+     *  just catalog apps, so this always matches what "Update All" would act on. */
+    updateSelected: (packageIds: string[]) => Promise<QueueItem[]>
     updateAll: () => Promise<QueueItem[]>
   }
   uninstall: {
     detectInstalled: () => Promise<InstalledApp[]>
-    uninstall: (appId: string) => Promise<void>
-    repair: (appId: string) => Promise<void>
-    reinstall: (appId: string) => Promise<QueueItem>
+    uninstall: (target: UninstallTarget) => Promise<void>
+    repair: (target: UninstallTarget) => Promise<void>
+    reinstall: (target: UninstallTarget) => Promise<QueueItem>
   }
   tweaks: {
     list: () => Promise<TweakDefinition[]>
@@ -88,6 +92,12 @@ export interface SetupForgeApi {
     pickOpenFile: () => Promise<string | null>
     openExternal: (url: string) => Promise<void>
     getAppVersion: () => Promise<string>
+  }
+  app: {
+    checkForUpdates: () => Promise<void>
+    downloadUpdate: () => Promise<void>
+    quitAndInstall: () => Promise<void>
+    onUpdateStatus: (cb: (status: AppUpdateStatus) => void) => () => void
   }
 }
 

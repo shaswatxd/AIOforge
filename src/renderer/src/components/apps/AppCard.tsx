@@ -6,17 +6,23 @@ import { Badge } from '../common/Badge'
 import { Rating } from '../common/Rating'
 import { FavoriteButton } from './FavoriteButton'
 import { useAddToQueue, useQueueList } from '../../queries/useQueue'
+import { useInstalledApps } from '../../queries/useUninstall'
 import { useUiStore } from '../../state/uiStore'
 import { formatBytes, formatDownloads } from '../../lib/utils'
 
 export function AppCard({ app }: { app: AppDefinition }) {
   const addToQueue = useAddToQueue()
   const { data: queue } = useQueueList()
+  const { data: installedApps } = useInstalledApps()
   const openAppDetail = useUiStore((s) => s.openAppDetail)
   const pushToast = useUiStore((s) => s.pushToast)
 
   const queueEntry = queue?.find((q) => q.appId === app.id && ['queued', 'downloading', 'installing'].includes(q.status))
-  const isInstalled = queue?.some((q) => q.appId === app.id && q.status === 'completed')
+  // "Installed" reflects the real system (a live winget/choco scan), not just apps we
+  // personally installed through the queue this session — otherwise anything that was
+  // already on the machine before AIOforge existed would still show an Install button.
+  const isInstalled =
+    installedApps?.some((a) => a.appId === app.id) || queue?.some((q) => q.appId === app.id && q.status === 'completed')
 
   const handleInstall = () => {
     addToQueue.mutate([{ appId: app.id }], {
