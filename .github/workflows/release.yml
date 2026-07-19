@@ -28,7 +28,9 @@ jobs:
 
       - run: npm run typecheck
 
-      - name: Build and publish
+      - run: npm run build
+
+      - name: Build installer and publish
         run: npx electron-builder --win nsis --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
