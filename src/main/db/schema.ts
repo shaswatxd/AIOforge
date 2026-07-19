@@ -28,6 +28,8 @@ CREATE TABLE IF NOT EXISTS queue_items (
   progress INTEGER NOT NULL DEFAULT 0,
   speed_bps INTEGER NOT NULL DEFAULT 0,
   eta_seconds INTEGER,
+  downloaded_bytes INTEGER,
+  total_bytes INTEGER,
   error TEXT,
   options_json TEXT,
   item_order INTEGER NOT NULL,

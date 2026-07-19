@@ -2,6 +2,8 @@ export interface PackageProgressUpdate {
   progress: number // 0-100
   speedBps: number
   etaSeconds: number | null
+  downloadedBytes?: number | null
+  totalBytes?: number | null
   logLine: string
 }
 
@@ -35,7 +37,7 @@ export interface IPackageManager {
   search(query: string): Promise<RemotePackageInfo[]>
   listInstalled(): Promise<RemotePackageInfo[]>
   checkUpgrades(): Promise<UpgradeCandidate[]>
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle
+  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle
   uninstall(packageId: string): Promise<void>
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle
+  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle
 }

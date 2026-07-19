@@ -9,6 +9,8 @@ interface Row {
   progress: number
   speed_bps: number
   eta_seconds: number | null
+  downloaded_bytes: number | null
+  total_bytes: number | null
   error: string | null
   options_json: string | null
   item_order: number
@@ -24,6 +26,8 @@ function toDomain(row: Row): QueueItem {
     progress: row.progress,
     speedBps: row.speed_bps,
     etaSeconds: row.eta_seconds,
+    downloadedBytes: row.downloaded_bytes,
+    totalBytes: row.total_bytes,
     error: row.error ?? undefined,
     optionsJson: row.options_json ? JSON.parse(row.options_json) : undefined,
     order: row.item_order,
@@ -52,11 +56,13 @@ export const queueRepo = {
   insert(item: QueueItem): void {
     getDb()
       .prepare(
-        `INSERT INTO queue_items (id, app_id, app_name, status, progress, speed_bps, eta_seconds, error, options_json, item_order, created_at)
-         VALUES (@id, @appId, @appName, @status, @progress, @speedBps, @etaSeconds, @error, @optionsJson, @order, @createdAt)`
+        `INSERT INTO queue_items (id, app_id, app_name, status, progress, speed_bps, eta_seconds, downloaded_bytes, total_bytes, error, options_json, item_order, created_at)
+         VALUES (@id, @appId, @appName, @status, @progress, @speedBps, @etaSeconds, @downloadedBytes, @totalBytes, @error, @optionsJson, @order, @createdAt)`
       )
       .run({
         ...item,
+        downloadedBytes: item.downloadedBytes ?? null,
+        totalBytes: item.totalBytes ?? null,
         error: item.error ?? null,
         optionsJson: item.optionsJson ? JSON.stringify(item.optionsJson) : null
       })
@@ -68,7 +74,7 @@ export const queueRepo = {
     const merged = { ...existing, ...patch }
     getDb()
       .prepare(
-        `UPDATE queue_items SET status=@status, progress=@progress, speed_bps=@speedBps, eta_seconds=@etaSeconds, error=@error WHERE id=@id`
+        `UPDATE queue_items SET status=@status, progress=@progress, speed_bps=@speedBps, eta_seconds=@etaSeconds, downloaded_bytes=@downloadedBytes, total_bytes=@totalBytes, error=@error WHERE id=@id`
       )
       .run({
         id,
@@ -76,6 +82,8 @@ export const queueRepo = {
         progress: merged.progress,
         speedBps: merged.speedBps,
         etaSeconds: merged.etaSeconds,
+        downloadedBytes: merged.downloadedBytes ?? null,
+        totalBytes: merged.totalBytes ?? null,
         error: merged.error ?? null
       })
   },

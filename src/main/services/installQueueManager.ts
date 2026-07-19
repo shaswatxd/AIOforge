@@ -64,10 +64,18 @@ class InstallQueueManager extends EventEmitter {
    *  both the Update Manager (action='upgrade') and non-catalog reinstalls (action='install'). */
   addPackageTargets(targets: UpgradeTarget[], action: 'install' | 'upgrade' = 'upgrade'): QueueItem[] {
     const created: QueueItem[] = []
+    const activeIds = new Set(
+      queueRepo
+        .all()
+        .filter((i) => ['queued', 'downloading', 'installing', 'paused'].includes(i.status))
+        .map((i) => i.appId)
+    )
     for (const t of targets) {
+      const targetId = t.appId ?? t.packageId
+      if (activeIds.has(targetId)) continue
       const item: QueueItem = {
         id: randomUUID(),
-        appId: t.appId ?? t.packageId,
+        appId: targetId,
         appName: t.name,
         status: 'queued',
         progress: 0,
@@ -95,7 +103,14 @@ class InstallQueueManager extends EventEmitter {
 
   private enqueue(requests: InstallRequest[], action: 'install' | 'upgrade'): QueueItem[] {
     const created: QueueItem[] = []
+    const activeIds = new Set(
+      queueRepo
+        .all()
+        .filter((i) => ['queued', 'downloading', 'installing', 'paused'].includes(i.status))
+        .map((i) => i.appId)
+    )
     for (const req of requests) {
+      if (activeIds.has(req.appId)) continue
       const app = APPS.find((a) => a.id === req.appId)
       if (!app) continue
       const item: QueueItem = {
@@ -210,6 +225,7 @@ class InstallQueueManager extends EventEmitter {
     try {
       const manager = app ? await resolveManagerForApp(app) : overrideSource === 'chocolatey' ? chocoManager : wingetManager
       const pkgId = app ? packageIdFor(app, manager) : overridePackageId!
+      const totalBytesHint = app ? app.stats.downloadSizeMb * 1024 * 1024 : 100 * 1024 * 1024
 
       queueRepo.update(next.id, { status: 'downloading', progress: 0 })
       this.emitProgress({ id: next.id, status: 'downloading', progress: 0, speedBps: 0, etaSeconds: null })
@@ -217,9 +233,25 @@ class InstallQueueManager extends EventEmitter {
       const spawnInstall = action === 'upgrade' ? manager.upgrade : manager.install
       const handle = spawnInstall(pkgId, (u) => {
         const status = u.progress >= 100 ? 'installing' : 'downloading'
-        queueRepo.update(next.id, { status, progress: u.progress, speedBps: u.speedBps, etaSeconds: u.etaSeconds })
-        this.emitProgress({ id: next.id, status, progress: u.progress, speedBps: u.speedBps, etaSeconds: u.etaSeconds, logLine: u.logLine })
-      })
+        queueRepo.update(next.id, {
+          status,
+          progress: u.progress,
+          speedBps: u.speedBps,
+          etaSeconds: u.etaSeconds,
+          downloadedBytes: u.downloadedBytes,
+          totalBytes: u.totalBytes
+        })
+        this.emitProgress({
+          id: next.id,
+          status,
+          progress: u.progress,
+          speedBps: u.speedBps,
+          etaSeconds: u.etaSeconds,
+          downloadedBytes: u.downloadedBytes,
+          totalBytes: u.totalBytes,
+          logLine: u.logLine
+        })
+      }, totalBytesHint)
       job.handle = handle
       // Pause/cancel may have been requested while we were still resolving the package
       // manager (before a real process existed to kill) — honor it now.
@@ -227,8 +259,10 @@ class InstallQueueManager extends EventEmitter {
 
       await handle.done
 
-      queueRepo.update(next.id, { status: 'completed', progress: 100 })
-      this.emitProgress({ id: next.id, status: 'completed', progress: 100, speedBps: 0, etaSeconds: 0 })
+      const existing = queueRepo.get(next.id)
+      const finalTotal = existing?.totalBytes ?? totalBytesHint
+      queueRepo.update(next.id, { status: 'completed', progress: 100, downloadedBytes: finalTotal, totalBytes: finalTotal })
+      this.emitProgress({ id: next.id, status: 'completed', progress: 100, speedBps: 0, etaSeconds: 0, downloadedBytes: finalTotal, totalBytes: finalTotal })
       historyRepo.finish(historyId, 'success')
       installedAppsRepo.upsert({
         appId: next.appId,

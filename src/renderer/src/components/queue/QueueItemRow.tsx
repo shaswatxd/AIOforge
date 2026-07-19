@@ -4,7 +4,7 @@ import type { QueueItem } from '@shared/types/queue'
 import { IconBadge } from '../common/IconBadge'
 import { Badge } from '../common/Badge'
 import { ProgressBar } from './ProgressBar'
-import { formatSpeed, formatEta } from '../../lib/utils'
+import { formatSpeed, formatEta, formatBytes } from '../../lib/utils'
 import { usePauseQueueItem, useResumeQueueItem, useCancelQueueItem, useRetryQueueItem } from '../../queries/useQueue'
 
 const STATUS_LABEL: Record<QueueItem['status'], string> = {
@@ -51,7 +51,10 @@ export function QueueItemRow({ item }: { item: QueueItem }) {
           <div className="mt-2 flex flex-col gap-1.5">
             <ProgressBar progress={item.progress} status={item.status} />
             <div className="flex items-center gap-3 text-xs text-secondary">
-              <span>{item.progress}%</span>
+              <span>
+                {item.progress}%
+                {item.downloadedBytes && item.totalBytes ? ` (${formatBytes(item.downloadedBytes)} / ${formatBytes(item.totalBytes)})` : ''}
+              </span>
               {isActive && (
                 <>
                   <span>{formatSpeed(item.speedBps)}</span>

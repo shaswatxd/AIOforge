@@ -78,8 +78,8 @@ export const chocoManager: IPackageManager = {
       .filter((c) => c.currentVersion && c.availableVersion)
   },
 
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
-    return spawnWithProgress(['install', packageId, '-y', '--no-progress'], onProgress)
+  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
+    return spawnWithProgress(['install', packageId, '-y', '--no-progress'], onProgress, totalBytesHint)
   },
 
   async uninstall(packageId: string): Promise<void> {
@@ -87,12 +87,16 @@ export const chocoManager: IPackageManager = {
     if (code !== 0) throw new Error(`choco uninstall failed (exit ${code}): ${stdout.slice(-500)}`)
   },
 
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
-    return spawnWithProgress(['upgrade', packageId, '-y', '--no-progress'], onProgress)
+  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
+    return spawnWithProgress(['upgrade', packageId, '-y', '--no-progress'], onProgress, totalBytesHint)
   }
 }
 
-function spawnWithProgress(args: string[], onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
+function spawnWithProgress(
+  args: string[],
+  onProgress: (u: PackageProgressUpdate) => void,
+  totalBytesHint?: number
+): InstallHandle {
   const tracker = new ProgressTracker()
   // choco's own progress bar is disabled (--no-progress) so we drive percentage from
   // its "Progress: Downloading ... 45%" status lines instead, which are newline-terminated.
@@ -105,7 +109,7 @@ function spawnWithProgress(args: string[], onProgress: (u: PackageProgressUpdate
     const text = chunk.toString()
     output += text
     for (const line of splitProgressChunk(text)) {
-      const update = tracker.parseLine(line, 100 * 1024 * 1024)
+      const update = tracker.parseLine(line, totalBytesHint ?? 100 * 1024 * 1024)
       if (update) onProgress(update)
     }
   }

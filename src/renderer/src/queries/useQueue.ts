@@ -19,7 +19,16 @@ export function useQueueProgressSync(): void {
         if (!current) return current
         return current.map((item) =>
           item.id === event.id
-            ? { ...item, status: event.status, progress: event.progress, speedBps: event.speedBps, etaSeconds: event.etaSeconds, error: event.error }
+            ? {
+                ...item,
+                status: event.status,
+                progress: event.progress,
+                speedBps: event.speedBps,
+                etaSeconds: event.etaSeconds,
+                downloadedBytes: event.downloadedBytes,
+                totalBytes: event.totalBytes,
+                error: event.error
+              }
             : item
         )
       })

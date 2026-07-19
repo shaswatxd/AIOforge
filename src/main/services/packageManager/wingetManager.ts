@@ -106,8 +106,8 @@ export const wingetManager: IPackageManager = {
     return results
   },
 
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
-    return spawnWithProgress(['install', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress)
+  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
+    return spawnWithProgress(['install', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress, totalBytesHint)
   },
 
   async uninstall(packageId: string): Promise<void> {
@@ -121,12 +121,16 @@ export const wingetManager: IPackageManager = {
     }
   },
 
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
-    return spawnWithProgress(['upgrade', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress)
+  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
+    return spawnWithProgress(['upgrade', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress, totalBytesHint)
   }
 }
 
-function spawnWithProgress(args: string[], onProgress: (u: PackageProgressUpdate) => void): InstallHandle {
+function spawnWithProgress(
+  args: string[],
+  onProgress: (u: PackageProgressUpdate) => void,
+  totalBytesHint?: number
+): InstallHandle {
   const tracker = new ProgressTracker()
   const child = spawn('winget', args, { windowsHide: true })
   let output = ''
@@ -135,7 +139,7 @@ function spawnWithProgress(args: string[], onProgress: (u: PackageProgressUpdate
     const text = chunk.toString()
     output += text
     for (const line of splitProgressChunk(text)) {
-      const update = tracker.parseLine(line, 100 * 1024 * 1024) // heuristic size hint; winget rarely reports totals up front
+      const update = tracker.parseLine(line, totalBytesHint ?? 100 * 1024 * 1024) // heuristic size hint; winget rarely reports totals up front
       if (update) onProgress(update)
     }
   }

@@ -15,6 +15,8 @@ export interface QueueItem {
   progress: number // 0-100
   speedBps: number
   etaSeconds: number | null
+  downloadedBytes?: number | null
+  totalBytes?: number | null
   error?: string
   optionsJson?: Record<string, unknown>
   order: number
@@ -27,6 +29,8 @@ export interface QueueProgressEvent {
   progress: number
   speedBps: number
   etaSeconds: number | null
+  downloadedBytes?: number | null
+  totalBytes?: number | null
   error?: string
   logLine?: string
 }

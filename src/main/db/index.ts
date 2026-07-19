@@ -18,6 +18,17 @@ export function getDb(): Database.Database {
   db.pragma('foreign_keys = ON')
   db.exec(SCHEMA_SQL)
 
+  try {
+    db.exec('ALTER TABLE queue_items ADD COLUMN downloaded_bytes INTEGER')
+  } catch (err) {
+    // column already exists
+  }
+  try {
+    db.exec('ALTER TABLE queue_items ADD COLUMN total_bytes INTEGER')
+  } catch (err) {
+    // column already exists
+  }
+
   return db
 }
 
