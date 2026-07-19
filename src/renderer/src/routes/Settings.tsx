@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { FolderOpen, CheckCircle2, XCircle, RefreshCw, DownloadCloud, RotateCw } from 'lucide-react'
 import { useSettings, useSetSettings, usePackageManagerAvailability } from '../queries/useSettings'
 import { useAppUpdate } from '../queries/useAppUpdate'
+import { formatBytes, formatSpeed } from '../lib/utils'
 import type { PackageManagerPref, ThemeMode } from '@shared/types/settings'
 
 const THEMES: { value: ThemeMode; label: string }[] = [
@@ -192,8 +193,20 @@ function AppUpdatePanel() {
       </div>
 
       {status.state === 'downloading' && (
-        <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
-          <div className="h-full rounded-full bg-accent transition-all" style={{ width: `${status.progress ?? 0}%` }} />
+        <div className="flex flex-col gap-1.5">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-black/5 dark:bg-white/10">
+            <div
+              className="h-full rounded-full bg-accent transition-all"
+              style={{ width: `${status.progress ?? 0}%` }}
+            />
+          </div>
+          <div className="flex items-center justify-between text-xs text-secondary">
+            <span>
+              {formatBytes(status.transferredBytes ?? 0)} of {formatBytes(status.totalBytes ?? 0)}
+            </span>
+            <span>{formatSpeed(status.bytesPerSecond ?? 0)}</span>
+            <span>{status.progress ?? 0}%</span>
+          </div>
         </div>
       )}
     </div>
@@ -209,7 +222,7 @@ function statusLabel(status: ReturnType<typeof useAppUpdate>['status']): string 
     case 'not-available':
       return "You're on the latest version"
     case 'downloading':
-      return `Downloading update… ${status.progress ?? 0}%`
+      return `Downloading v${status.version ?? ''}…`
     case 'downloaded':
       return `Version ${status.version} downloaded — restart to install`
     case 'error':

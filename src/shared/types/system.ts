@@ -51,6 +51,10 @@ export interface AppUpdateStatus {
   state: 'idle' | 'checking' | 'available' | 'not-available' | 'downloading' | 'downloaded' | 'error'
   version?: string
   progress?: number
+  /** Bytes transferred / total so far — populated during 'downloading'. */
+  transferredBytes?: number
+  totalBytes?: number
+  bytesPerSecond?: number
   error?: string
 }
 

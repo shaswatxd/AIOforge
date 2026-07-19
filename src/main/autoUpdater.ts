@@ -16,7 +16,15 @@ export function initAutoUpdater(getWindow: () => BrowserWindow | null): void {
   autoUpdater.on('checking-for-update', () => send({ state: 'checking' }))
   autoUpdater.on('update-available', (info) => send({ state: 'available', version: info.version }))
   autoUpdater.on('update-not-available', () => send({ state: 'not-available' }))
-  autoUpdater.on('download-progress', (p) => send({ state: 'downloading', progress: Math.round(p.percent) }))
+  autoUpdater.on('download-progress', (p) =>
+    send({
+      state: 'downloading',
+      progress: Math.round(p.percent),
+      transferredBytes: p.transferred,
+      totalBytes: p.total,
+      bytesPerSecond: p.bytesPerSecond
+    })
+  )
   autoUpdater.on('update-downloaded', (info) => send({ state: 'downloaded', version: info.version }))
   autoUpdater.on('error', (err) => send({ state: 'error', error: err.message }))
 
