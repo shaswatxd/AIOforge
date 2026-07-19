@@ -1,0 +1,167 @@
+import type { ReactNode } from 'react'
+import { FolderOpen, CheckCircle2, XCircle } from 'lucide-react'
+import { useSettings, useSetSettings, usePackageManagerAvailability } from '../queries/useSettings'
+import type { PackageManagerPref, ThemeMode } from '@shared/types/settings'
+
+const THEMES: { value: ThemeMode; label: string }[] = [
+  { value: 'system', label: 'Match System' },
+  { value: 'light', label: 'Light' },
+  { value: 'dark', label: 'Dark' }
+]
+
+const PACKAGE_MANAGERS: { value: PackageManagerPref; label: string; description: string }[] = [
+  { value: 'winget', label: 'Winget', description: 'Built into Windows 11 (recommended)' },
+  { value: 'chocolatey', label: 'Chocolatey', description: 'Community package manager' },
+  { value: 'both', label: 'Both', description: 'Prefer winget, fall back to Chocolatey' }
+]
+
+export function SettingsPage() {
+  const { data: settings } = useSettings()
+  const setSettings = useSetSettings()
+  const { data: availability } = usePackageManagerAvailability()
+
+  if (!settings) return <div className="p-6 text-sm text-secondary">Loading…</div>
+
+  const pickDownloadLocation = async () => {
+    const dir = await window.api.system.pickDirectory()
+    if (dir) setSettings.mutate({ downloadLocation: dir })
+  }
+
+  return (
+    <div className="flex flex-col gap-8 p-6">
+      <div>
+        <h1 className="text-xl font-bold">Settings</h1>
+        <p className="text-sm text-secondary">Configure appearance, downloads and package manager preferences.</p>
+      </div>
+
+      <Section title="Theme">
+        <div className="flex gap-2">
+          {THEMES.map((t) => (
+            <OptionPill key={t.value} active={settings.theme === t.value} onClick={() => setSettings.mutate({ theme: t.value })}>
+              {t.label}
+            </OptionPill>
+          ))}
+        </div>
+      </Section>
+
+      <Section title="Language">
+        <select
+          value={settings.language}
+          onChange={(e) => setSettings.mutate({ language: e.target.value })}
+          className="w-56 rounded-fluent border border-subtle bg-transparent px-3 py-2 text-sm outline-none"
+        >
+          <option value="en">English</option>
+          <option value="es">Español</option>
+          <option value="fr">Français</option>
+          <option value="de">Deutsch</option>
+          <option value="hi">हिन्दी</option>
+        </select>
+      </Section>
+
+      <Section title="Download Location">
+        <div className="flex items-center gap-2">
+          <input
+            readOnly
+            value={settings.downloadLocation || 'System default'}
+            className="w-80 rounded-fluent border border-subtle bg-transparent px-3 py-2 text-sm text-secondary outline-none"
+          />
+          <button
+            onClick={pickDownloadLocation}
+            className="flex items-center gap-2 rounded-fluent border border-subtle px-3 py-2 text-sm hover:bg-black/5 dark:hover:bg-white/10"
+          >
+            <FolderOpen size={15} /> Browse
+          </button>
+        </div>
+      </Section>
+
+      <Section title="Package Manager">
+        <div className="flex flex-col gap-2">
+          {PACKAGE_MANAGERS.map((pm) => {
+            const isAvailable = pm.value === 'both' || availability?.[pm.value === 'chocolatey' ? 'chocolatey' : 'winget']
+            return (
+              <label
+                key={pm.value}
+                className="flex items-center gap-3 rounded-fluent border border-subtle p-3 hover:bg-black/[0.02] dark:hover:bg-white/[0.02]"
+              >
+                <input
+                  type="radio"
+                  checked={settings.packageManager === pm.value}
+                  onChange={() => setSettings.mutate({ packageManager: pm.value })}
+                  className="accent-accent"
+                />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">{pm.label}</div>
+                  <div className="text-xs text-secondary">{pm.description}</div>
+                </div>
+                {pm.value !== 'both' &&
+                  (isAvailable ? (
+                    <CheckCircle2 size={16} className="text-emerald-500" />
+                  ) : (
+                    <XCircle size={16} className="text-rose-500" />
+                  ))}
+              </label>
+            )
+          })}
+        </div>
+      </Section>
+
+      <Section title="Install Queue">
+        <label className="flex items-center gap-3 text-sm">
+          Concurrent installs
+          <input
+            type="range"
+            min={1}
+            max={5}
+            value={settings.queueConcurrency}
+            onChange={(e) => setSettings.mutate({ queueConcurrency: Number(e.target.value) })}
+            className="accent-accent"
+          />
+          <span className="w-4 text-center font-medium">{settings.queueConcurrency}</span>
+        </label>
+      </Section>
+
+      <Section title="Updates">
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.backgroundUpdateChecking}
+            onChange={(e) => setSettings.mutate({ backgroundUpdateChecking: e.target.checked })}
+            className="accent-accent"
+          />
+          Check for updates in the background
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <input
+            type="checkbox"
+            checked={settings.autoUpdateApps}
+            onChange={(e) => setSettings.mutate({ autoUpdateApps: e.target.checked })}
+            className="accent-accent"
+          />
+          Automatically install updates
+        </label>
+      </Section>
+    </div>
+  )
+}
+
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="flex flex-col gap-3">
+      <h2 className="text-sm font-semibold text-secondary">{title}</h2>
+      {children}
+    </section>
+  )
+}
+
+function OptionPill({ children, active, onClick }: { children: ReactNode; active: boolean; onClick: () => void }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`rounded-fluent border px-4 py-2 text-sm font-medium ${
+        active ? 'border-accent bg-accent text-white' : 'border-subtle hover:bg-black/5 dark:hover:bg-white/10'
+      }`}
+    >
+      {children}
+    </button>
+  )
+}

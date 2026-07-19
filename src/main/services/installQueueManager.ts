@@ -1,0 +1,208 @@
+import { EventEmitter } from 'events'
+import { randomUUID } from 'crypto'
+import type { QueueItem, QueueProgressEvent } from '@shared/types/queue'
+import { APPS } from '@shared/catalog/apps'
+import { queueRepo } from '../db/repositories/queue.repo'
+import { installedAppsRepo } from '../db/repositories/installedApps.repo'
+import { historyRepo } from '../db/repositories/history.repo'
+import { settingsRepo } from '../db/repositories/settings.repo'
+import { resolveManagerForApp, packageIdFor } from './packageManager/packageManagerRouter'
+import type { InstallHandle } from './packageManager/IPackageManager'
+
+export interface InstallRequest {
+  appId: string
+  options?: Record<string, unknown>
+}
+
+interface ActiveJob {
+  handle: InstallHandle
+  historyId: string
+  pausedByUser: boolean
+  cancelledByUser: boolean
+}
+
+/** Orchestrates the install queue: enforces concurrency, drives progress events, and
+ *  implements pause/resume by killing and later re-spawning the underlying CLI process —
+ *  winget/choco expose no true suspend, so a "paused" item simply waits as status='paused'
+ *  and restarts from scratch on resume (packages are re-downloaded; see README). */
+class InstallQueueManager extends EventEmitter {
+  private active = new Map<string, ActiveJob>()
+
+  list(): QueueItem[] {
+    return queueRepo.all()
+  }
+
+  add(requests: InstallRequest[]): QueueItem[] {
+    return this.enqueue(requests, 'install')
+  }
+
+  /** Same queue/concurrency machinery as add(), but drives manager.upgrade() instead of
+   *  manager.install() — used by the Update Manager. The action is stashed in optionsJson
+   *  under an internal key rather than a new DB column, since it's the only extra bit needed. */
+  addUpgrades(appIds: string[]): QueueItem[] {
+    return this.enqueue(
+      appIds.map((appId) => ({ appId })),
+      'upgrade'
+    )
+  }
+
+  private enqueue(requests: InstallRequest[], action: 'install' | 'upgrade'): QueueItem[] {
+    const created: QueueItem[] = []
+    for (const req of requests) {
+      const app = APPS.find((a) => a.id === req.appId)
+      if (!app) continue
+      const item: QueueItem = {
+        id: randomUUID(),
+        appId: app.id,
+        appName: app.name,
+        status: 'queued',
+        progress: 0,
+        speedBps: 0,
+        etaSeconds: null,
+        optionsJson: { ...req.options, __action: action },
+        order: queueRepo.nextOrder(),
+        createdAt: new Date().toISOString()
+      }
+      queueRepo.insert(item)
+      created.push(item)
+    }
+    void this.processNext()
+    return created
+  }
+
+  pause(id: string): void {
+    const job = this.active.get(id)
+    if (job) {
+      job.pausedByUser = true
+      job.handle?.cancel()
+      return
+    }
+    const item = queueRepo.get(id)
+    if (item && item.status === 'queued') {
+      queueRepo.update(id, { status: 'paused' })
+      this.emitProgress({ id, status: 'paused', progress: item.progress, speedBps: 0, etaSeconds: null })
+    }
+  }
+
+  resume(id: string): void {
+    const item = queueRepo.get(id)
+    if (!item || item.status !== 'paused') return
+    queueRepo.update(id, { status: 'queued', progress: 0 })
+    this.emitProgress({ id, status: 'queued', progress: 0, speedBps: 0, etaSeconds: null })
+    void this.processNext()
+  }
+
+  cancel(id: string): void {
+    const job = this.active.get(id)
+    if (job) {
+      job.cancelledByUser = true
+      job.handle?.cancel()
+      return
+    }
+    const item = queueRepo.get(id)
+    if (item) {
+      queueRepo.update(id, { status: 'cancelled' })
+      this.emitProgress({ id, status: 'cancelled', progress: item.progress, speedBps: 0, etaSeconds: null })
+    }
+  }
+
+  retry(id: string): void {
+    const item = queueRepo.get(id)
+    if (!item || !['failed', 'cancelled'].includes(item.status)) return
+    queueRepo.update(id, { status: 'queued', progress: 0, error: undefined })
+    this.emitProgress({ id, status: 'queued', progress: 0, speedBps: 0, etaSeconds: null })
+    void this.processNext()
+  }
+
+  clearFinished(): void {
+    queueRepo.clearFinished()
+  }
+
+  onProgress(cb: (event: QueueProgressEvent) => void): () => void {
+    this.on('progress', cb)
+    return () => this.off('progress', cb)
+  }
+
+  private emitProgress(event: QueueProgressEvent): void {
+    this.emit('progress', event)
+  }
+
+  private async processNext(): Promise<void> {
+    const concurrency = settingsRepo.getAll().queueConcurrency
+    if (this.active.size >= concurrency) return
+
+    const next = queueRepo.all().find((i) => i.status === 'queued' && !this.active.has(i.id))
+    if (!next) return
+
+    const app = APPS.find((a) => a.id === next.appId)
+    if (!app) {
+      queueRepo.update(next.id, { status: 'failed', error: 'App not found in catalog' })
+      this.emitProgress({ id: next.id, status: 'failed', progress: 0, speedBps: 0, etaSeconds: null, error: 'App not found' })
+      void this.processNext()
+      return
+    }
+
+    const action: 'install' | 'upgrade' = next.optionsJson?.__action === 'upgrade' ? 'upgrade' : 'install'
+    const historyId = historyRepo.add({
+      appId: app.id,
+      action: action === 'upgrade' ? 'update' : 'install',
+      status: 'started',
+      startedAt: new Date().toISOString()
+    })
+    const job: ActiveJob = { handle: undefined as unknown as InstallHandle, pausedByUser: false, cancelledByUser: false, historyId }
+    // Reserve the concurrency slot synchronously (before any await) so concurrent
+    // processNext() calls can't both pass the concurrency check for the same slot.
+    this.active.set(next.id, job)
+
+    try {
+      const manager = await resolveManagerForApp(app)
+      const pkgId = packageIdFor(app, manager)
+
+      queueRepo.update(next.id, { status: 'downloading', progress: 0 })
+      this.emitProgress({ id: next.id, status: 'downloading', progress: 0, speedBps: 0, etaSeconds: null })
+
+      const spawnInstall = action === 'upgrade' ? manager.upgrade : manager.install
+      const handle = spawnInstall(pkgId, (u) => {
+        const status = u.progress >= 100 ? 'installing' : 'downloading'
+        queueRepo.update(next.id, { status, progress: u.progress, speedBps: u.speedBps, etaSeconds: u.etaSeconds })
+        this.emitProgress({ id: next.id, status, progress: u.progress, speedBps: u.speedBps, etaSeconds: u.etaSeconds, logLine: u.logLine })
+      })
+      job.handle = handle
+      // Pause/cancel may have been requested while we were still resolving the package
+      // manager (before a real process existed to kill) — honor it now.
+      if (job.pausedByUser || job.cancelledByUser) handle.cancel()
+
+      await handle.done
+
+      queueRepo.update(next.id, { status: 'completed', progress: 100 })
+      this.emitProgress({ id: next.id, status: 'completed', progress: 100, speedBps: 0, etaSeconds: 0 })
+      historyRepo.finish(historyId, 'success')
+      installedAppsRepo.upsert({
+        appId: app.id,
+        name: app.name,
+        version: app.stats.latestVersion,
+        installedAt: new Date().toISOString(),
+        source: manager.id === 'winget' ? 'winget' : 'chocolatey'
+      })
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err)
+      if (job.pausedByUser) {
+        queueRepo.update(next.id, { status: 'paused' })
+        this.emitProgress({ id: next.id, status: 'paused', progress: 0, speedBps: 0, etaSeconds: null })
+      } else if (job.cancelledByUser) {
+        queueRepo.update(next.id, { status: 'cancelled' })
+        this.emitProgress({ id: next.id, status: 'cancelled', progress: 0, speedBps: 0, etaSeconds: null })
+        historyRepo.finish(historyId, 'failed', 'Cancelled by user')
+      } else {
+        queueRepo.update(next.id, { status: 'failed', error: message })
+        this.emitProgress({ id: next.id, status: 'failed', progress: 0, speedBps: 0, etaSeconds: null, error: message })
+        historyRepo.finish(historyId, 'failed', message)
+      }
+    } finally {
+      this.active.delete(next.id)
+      void this.processNext()
+    }
+  }
+}
+
+export const installQueueManager = new InstallQueueManager()

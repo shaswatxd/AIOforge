@@ -1,0 +1,25 @@
+appId: com.setupforge.app
+productName: SetupForge
+directories:
+  output: release
+  buildResources: build
+files:
+  - out/**/*
+  - package.json
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  # icon: build/icon.ico   # add a real .ico before packaging — see README
+  # System-wide installs/uninstalls (winget/choco/registry tweaks) need admin rights —
+  # without this the packaged app launches unelevated and installers fail with generic
+  # errors like MSI 1603 "insufficient privileges". Windows will UAC-prompt on launch.
+  requestedExecutionLevel: requireAdministrator
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+publish:
+  provider: github
+  owner: shaswatxd
+  repo: AIOforge
