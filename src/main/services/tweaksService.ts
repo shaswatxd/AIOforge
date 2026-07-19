@@ -120,6 +120,69 @@ const DEFS: TweakDef[] = [
       elevatedPowershell(
         `New-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock' -Name AllowDevelopmentWithoutDevLicense -PropertyType DWord -Value 1 -Force`
       )
+  },
+  {
+    id: 'disable-telemetry',
+    label: 'Disable Diagnostics & Telemetry',
+    description: 'Disables Windows telemetry, diagnostic tracking services, and data collection.',
+    category: 'system',
+    run: () =>
+      powershell(
+        `Stop-Service -Name DiagTrack -ErrorAction SilentlyContinue; ` +
+          `Set-Service -Name DiagTrack -StartupType Disabled -ErrorAction SilentlyContinue; ` +
+          `Stop-Service -Name dmwappushservice -ErrorAction SilentlyContinue; ` +
+          `Set-Service -Name dmwappushservice -StartupType Disabled -ErrorAction SilentlyContinue; ` +
+          `Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection' -Name AllowTelemetry -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue; ` +
+          `Set-ItemProperty -Path 'HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection' -Name AllowTelemetry -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue`
+      )
+  },
+  {
+    id: 'disable-bing-search',
+    label: 'Disable Bing Start Menu Search',
+    description: 'Prevents Windows Start Menu from showing online Bing search suggestions.',
+    category: 'system',
+    run: () =>
+      powershell(
+        `Set-ItemProperty -Path 'HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer' -Name DisableSearchBoxSuggestions -Value 1 -Type DWord -Force -ErrorAction SilentlyContinue; ` +
+          `Set-ItemProperty -Path 'HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search' -Name BingSearchEnabled -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue`
+      )
+  },
+  {
+    id: 'classic-context-menu',
+    label: 'Classic Right-Click Context Menu',
+    description: 'Restores the classic Windows 10 style right-click context menu in Windows 11 (restarts explorer.exe).',
+    category: 'appearance',
+    run: () =>
+      powershell(
+        `$path = 'HKCU:\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32'; ` +
+          `New-Item -Path $path -Force -ErrorAction SilentlyContinue; ` +
+          `Set-ItemProperty -Path $path -Name '' -Value '' -Force; ` +
+          `Stop-Process -Name explorer -Force -ErrorAction SilentlyContinue`
+      )
+  },
+  {
+    id: 'set-cloudflare-dns',
+    label: 'Set Cloudflare DNS (1.1.1.1)',
+    description: 'Configures network adapters to use Cloudflare DNS for faster, private browsing.',
+    category: 'system',
+    run: () =>
+      powershell(
+        `Get-NetIPAddress -AddressFamily IPv4 | Where-Object { $_.IPAddress -notlike "127.*" -and $_.InterfaceAlias -notlike "*Loopback*" } | ForEach-Object { ` +
+          `Set-DnsClientServerAddress -InterfaceIndex $_.InterfaceIndex -ServerAddresses ("1.1.1.1", "1.0.0.1") -ErrorAction SilentlyContinue ` +
+          `}`
+      )
+  },
+  {
+    id: 'system-cleanup',
+    label: 'Clean System Junk Files',
+    description: 'Clears user temporary files, Windows temp logs, and Recycle Bin items.',
+    category: 'system',
+    run: () =>
+      powershell(
+        `Remove-Item -Path "$env:TEMP\\*" -Recurse -Force -ErrorAction SilentlyContinue; ` +
+          `Remove-Item -Path "C:\\Windows\\Temp\\*" -Recurse -Force -ErrorAction SilentlyContinue; ` +
+          `Clear-RecycleBin -Confirm:$false -ErrorAction SilentlyContinue`
+      )
   }
 ]
 

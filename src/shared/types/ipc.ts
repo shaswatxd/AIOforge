@@ -28,6 +28,7 @@ export interface SetupForgeApi {
     favorites: () => Promise<string[]>
     toggleFavorite: (appId: string) => Promise<string[]>
     recommended: () => Promise<AppDefinition[]>
+    searchOnline: (query: string) => Promise<{ id: string; name: string; version: string; source: 'winget' | 'chocolatey' }[]>
   }
   queue: {
     list: () => Promise<QueueItem[]>

@@ -18,11 +18,10 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  # The app runs unelevated by default on purpose — an always-elevated window can't be
-  # captured by non-elevated screenshot tools (Windows blocks cross-privilege window
-  # interaction). The handful of actions that genuinely need admin rights (uninstall,
-  # repair, Developer Mode, WSL) request a single UAC prompt just for that command
-  # instead — see src/main/services/packageManager/elevate.ts.
+  # System-wide installs/uninstalls (winget/choco/registry tweaks) need admin rights —
+  # without this the packaged app launches unelevated and installers fail with generic
+  # errors like MSI 1603 "insufficient privileges". Windows will UAC-prompt on launch.
+  requestedExecutionLevel: requireAdministrator
 nsis:
   # Discord/Slack-style installer: no wizard pages, just a small animated "Installing…"
   # window that installs per-user (no UAC needed for the install step itself) and

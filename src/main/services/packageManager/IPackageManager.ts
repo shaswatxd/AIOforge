@@ -37,7 +37,17 @@ export interface IPackageManager {
   search(query: string): Promise<RemotePackageInfo[]>
   listInstalled(): Promise<RemotePackageInfo[]>
   checkUpgrades(): Promise<UpgradeCandidate[]>
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle
+  install(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle
   uninstall(packageId: string): Promise<void>
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle
+  upgrade(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle
 }

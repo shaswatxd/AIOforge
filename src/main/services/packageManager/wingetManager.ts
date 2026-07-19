@@ -106,8 +106,29 @@ export const wingetManager: IPackageManager = {
     return results
   },
 
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
-    return spawnWithProgress(['install', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress, totalBytesHint)
+  install(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle {
+    const args = ['install', '--id', packageId, '-e']
+    if (options?.interactive) {
+      args.push('--interactive')
+    } else {
+      args.push('--silent')
+    }
+    args.push('--accept-package-agreements', '--accept-source-agreements', '--source', 'winget')
+    if (!options?.interactive) {
+      args.push('--disable-interactivity')
+    }
+    if (options?.installPath) {
+      args.push('--location', options.installPath)
+    }
+    if (options?.scope) {
+      args.push('--scope', options.scope)
+    }
+    return spawnWithProgress(args, onProgress, totalBytesHint)
   },
 
   async uninstall(packageId: string): Promise<void> {
@@ -121,8 +142,29 @@ export const wingetManager: IPackageManager = {
     }
   },
 
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
-    return spawnWithProgress(['upgrade', '--id', packageId, '-e', '--silent', ...COMMON_FLAGS], onProgress, totalBytesHint)
+  upgrade(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle {
+    const args = ['upgrade', '--id', packageId, '-e']
+    if (options?.interactive) {
+      args.push('--interactive')
+    } else {
+      args.push('--silent')
+    }
+    args.push('--accept-package-agreements', '--accept-source-agreements', '--source', 'winget')
+    if (!options?.interactive) {
+      args.push('--disable-interactivity')
+    }
+    if (options?.installPath) {
+      args.push('--location', options.installPath)
+    }
+    if (options?.scope) {
+      args.push('--scope', options.scope)
+    }
+    return spawnWithProgress(args, onProgress, totalBytesHint)
   }
 }
 

@@ -10,7 +10,8 @@ const api: SetupForgeApi = {
     categories: () => ipcRenderer.invoke('catalog:categories'),
     favorites: () => ipcRenderer.invoke('catalog:favorites'),
     toggleFavorite: (appId) => ipcRenderer.invoke('catalog:toggleFavorite', appId),
-    recommended: () => ipcRenderer.invoke('catalog:recommended')
+    recommended: () => ipcRenderer.invoke('catalog:recommended'),
+    searchOnline: (query) => ipcRenderer.invoke('catalog:searchOnline', query)
   },
   queue: {
     list: () => ipcRenderer.invoke('queue:list'),

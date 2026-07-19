@@ -26,15 +26,36 @@ export function AppInstallOptionsDrawer() {
   const { data: app } = useCatalogApp(selectedAppId)
   const addToQueue = useAddToQueue()
   const [values, setValues] = useState<Record<string, unknown>>({})
+  const [scope, setScope] = useState<'default' | 'user' | 'machine'>('default')
+  const [interactive, setInteractive] = useState(false)
+  const [installPath, setInstallPath] = useState('')
+
+  const handlePickDirectory = async () => {
+    const path = await window.api.system.pickDirectory()
+    if (path) setInstallPath(path)
+  }
 
   useEffect(() => {
-    if (app?.installOptions) setValues(defaultsFor(app.installOptions))
+    if (app?.installOptions) {
+      setValues(defaultsFor(app.installOptions))
+    } else {
+      setValues({})
+    }
+    setScope('default')
+    setInteractive(false)
+    setInstallPath('')
   }, [app?.id])
 
   if (!app) return <Modal open={!!selectedAppId} onClose={closeAppDetail} title="Loading…" children={null} />
 
   const handleInstall = () => {
-    addToQueue.mutate([{ appId: app.id, options: values }], {
+    const opts = {
+      ...values,
+      installPath: installPath || undefined,
+      scope: scope === 'default' ? undefined : scope,
+      interactive: interactive || undefined
+    }
+    addToQueue.mutate([{ appId: app.id, options: opts }], {
       onSuccess: () => {
         pushToast(`${app.name} added to install queue`, 'success')
         closeAppDetail()
@@ -100,6 +121,54 @@ export function AppInstallOptionsDrawer() {
             ))}
           </div>
         )}
+
+        <div className="flex flex-col gap-4 border-t border-subtle pt-4">
+          <h4 className="text-sm font-semibold">Standard Install Options</h4>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-secondary">Installation Scope</span>
+              <select
+                value={scope}
+                onChange={(e) => setScope(e.target.value as 'default' | 'user' | 'machine')}
+                className="rounded-fluent border border-subtle bg-transparent px-2 py-1.5 outline-none"
+              >
+                <option value="default">Default</option>
+                <option value="user">Per-User (User)</option>
+                <option value="machine">System-Wide (Machine)</option>
+              </select>
+            </label>
+
+            <label className="flex items-end gap-2 text-sm pb-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={interactive}
+                onChange={(e) => setInteractive(e.target.checked)}
+                className="accent-accent"
+              />
+              <span className="text-primary font-medium">Interactive Mode (Show UI)</span>
+            </label>
+          </div>
+
+          <label className="flex flex-col gap-1 text-sm">
+            <span className="text-secondary">Custom Install Directory</span>
+            <div className="flex gap-2">
+              <input
+                value={installPath}
+                onChange={(e) => setInstallPath(e.target.value)}
+                placeholder="C:\Program Files\..."
+                className="flex-1 rounded-fluent border border-subtle bg-transparent px-2 py-1.5 outline-none"
+              />
+              <button
+                type="button"
+                onClick={handlePickDirectory}
+                className="rounded-fluent border border-subtle px-3 py-1.5 hover:bg-black/5 dark:hover:bg-white/10"
+              >
+                Browse...
+              </button>
+            </div>
+          </label>
+        </div>
 
         <div className="flex gap-2 border-t border-subtle pt-4">
           <button

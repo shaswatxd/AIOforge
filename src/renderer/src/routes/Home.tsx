@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import { ListChecks, Download, PackageCheck, RefreshCw } from 'lucide-react'
 import { SearchBar } from '../components/common/SearchBar'
 import { CategoryChip } from '../components/common/CategoryChip'
@@ -24,6 +24,31 @@ export function Home() {
   const filters = useUiStore((s) => s.filters)
   const setCategory = useUiStore((s) => s.setCategory)
   const setSort = useUiStore((s) => s.setSort)
+  const openAppDetail = useUiStore((s) => s.openAppDetail)
+  const pushToast = useUiStore((s) => s.pushToast)
+
+  const [onlineResults, setOnlineResults] = useState<any[]>([])
+  const [isSearchingOnline, setIsSearchingOnline] = useState(false)
+  const [searchTriggered, setSearchTriggered] = useState(false)
+
+  useEffect(() => {
+    setOnlineResults([])
+    setSearchTriggered(false)
+  }, [filters.query])
+
+  const handleOnlineSearch = async () => {
+    if (!filters.query) return
+    setIsSearchingOnline(true)
+    setSearchTriggered(true)
+    try {
+      const results = await window.api.catalog.searchOnline(filters.query)
+      setOnlineResults(results)
+    } catch (err) {
+      pushToast('Online search failed', 'error')
+    } finally {
+      setIsSearchingOnline(false)
+    }
+  }
 
   const { data: categories } = useCategories()
   const { data: allApps, isLoading } = useCatalogList(filters)
@@ -88,6 +113,55 @@ export function Home() {
             {filters.query ? `Results for "${filters.query}"` : 'Browse'} · {allApps?.length ?? 0} apps
           </h2>
           {isLoading ? <div className="text-sm text-secondary">Loading…</div> : <AppGrid apps={allApps ?? []} />}
+
+          {filters.query && (
+            <div className="mt-6 border-t border-subtle pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-base font-semibold">Online Repositories</h3>
+                  <p className="text-xs text-secondary">Search the full Winget and Chocolatey online package repositories for "{filters.query}".</p>
+                </div>
+                <button
+                  onClick={handleOnlineSearch}
+                  disabled={isSearchingOnline}
+                  className="flex items-center gap-2 rounded-fluent bg-accent px-4 py-2 text-xs font-semibold text-white hover:bg-accent-hover disabled:opacity-60"
+                >
+                  {isSearchingOnline ? 'Searching...' : 'Search Online'}
+                </button>
+              </div>
+
+              {onlineResults.length > 0 ? (
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  {onlineResults.map((pkg) => (
+                    <div key={`${pkg.source}:${pkg.id}`} className="acrylic flex items-center justify-between gap-3 rounded-fluent-lg border border-subtle p-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold truncate">{pkg.name}</span>
+                        </div>
+                        <div className="text-xs text-secondary truncate mt-0.5">{pkg.id}</div>
+                        <div className="text-xs text-secondary mt-0.5">Version: {pkg.version}</div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="rounded bg-black/5 dark:bg-white/10 px-2 py-0.5 text-[10px] uppercase font-semibold text-secondary">
+                          {pkg.source}
+                        </span>
+                        <button
+                          onClick={() => openAppDetail(`${pkg.source}:${pkg.id}`)}
+                          className="rounded-fluent bg-accent px-3 py-1.5 text-xs font-semibold text-white hover:bg-accent-hover whitespace-nowrap"
+                        >
+                          Configure &amp; Install
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                searchTriggered && !isSearchingOnline && (
+                  <div className="text-sm text-secondary text-center py-4">No online packages found matching "{filters.query}".</div>
+                )
+              )}
+            </div>
+          )}
         </section>
       ) : (
         <>

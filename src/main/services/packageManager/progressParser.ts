@@ -10,7 +10,7 @@ export class ProgressTracker {
   /** Parses a single line of winget/choco output. Returns null if the line carries no
    *  progress signal (most lines don't — only the carriage-return progress bar does). */
   parseLine(line: string, totalBytesHint?: number): PackageProgressUpdate | null {
-    const percentMatch = line.match(/(\d{1,3})\s*%/)
+    const percentMatch = line.match(/(\d{1,3})(?:\.\d+)?\s*%/)
     const sizeMatch = line.match(/([\d.]+)\s*(B|KB|MB|GB|TB)\s*(?:\/|of|out of)\s*([\d.]+)\s*(B|KB|MB|GB|TB)/i)
 
     let percent: number | null = null

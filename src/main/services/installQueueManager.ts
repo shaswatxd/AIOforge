@@ -112,7 +112,31 @@ class InstallQueueManager extends EventEmitter {
     for (const req of requests) {
       if (activeIds.has(req.appId)) continue
       const app = APPS.find((a) => a.id === req.appId)
-      if (!app) continue
+      if (!app) {
+        if (req.appId.startsWith('winget:') || req.appId.startsWith('chocolatey:')) {
+          const [source, pkgId] = req.appId.split(':')
+          const item: QueueItem = {
+            id: randomUUID(),
+            appId: req.appId,
+            appName: pkgId,
+            status: 'queued',
+            progress: 0,
+            speedBps: 0,
+            etaSeconds: null,
+            optionsJson: {
+              ...req.options,
+              __action: action,
+              __packageId: pkgId,
+              __source: source
+            },
+            order: queueRepo.nextOrder(),
+            createdAt: new Date().toISOString()
+          }
+          queueRepo.insert(item)
+          created.push(item)
+        }
+        continue
+      }
       const item: QueueItem = {
         id: randomUUID(),
         appId: app.id,
@@ -230,6 +254,14 @@ class InstallQueueManager extends EventEmitter {
       queueRepo.update(next.id, { status: 'downloading', progress: 0 })
       this.emitProgress({ id: next.id, status: 'downloading', progress: 0, speedBps: 0, etaSeconds: null })
 
+      const opt = next.optionsJson
+        ? {
+            installPath: next.optionsJson.installPath as string | undefined,
+            scope: next.optionsJson.scope as 'user' | 'machine' | undefined,
+            interactive: next.optionsJson.interactive as boolean | undefined
+          }
+        : undefined
+
       const spawnInstall = action === 'upgrade' ? manager.upgrade : manager.install
       const handle = spawnInstall(pkgId, (u) => {
         const status = u.progress >= 100 ? 'installing' : 'downloading'
@@ -251,7 +283,7 @@ class InstallQueueManager extends EventEmitter {
           totalBytes: u.totalBytes,
           logLine: u.logLine
         })
-      }, totalBytesHint)
+      }, totalBytesHint, opt)
       job.handle = handle
       // Pause/cancel may have been requested while we were still resolving the package
       // manager (before a real process existed to kill) — honor it now.

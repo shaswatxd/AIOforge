@@ -78,8 +78,20 @@ export const chocoManager: IPackageManager = {
       .filter((c) => c.currentVersion && c.availableVersion)
   },
 
-  install(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
-    return spawnWithProgress(['install', packageId, '-y', '--no-progress'], onProgress, totalBytesHint)
+  install(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle {
+    const args = ['install', packageId, '--no-progress']
+    if (!options?.interactive) {
+      args.push('-y')
+    }
+    if (options?.installPath) {
+      args.push('--install-directory', options.installPath)
+    }
+    return spawnWithProgress(args, onProgress, totalBytesHint)
   },
 
   async uninstall(packageId: string): Promise<void> {
@@ -87,8 +99,20 @@ export const chocoManager: IPackageManager = {
     if (code !== 0) throw new Error(`choco uninstall failed (exit ${code}): ${stdout.slice(-500)}`)
   },
 
-  upgrade(packageId: string, onProgress: (u: PackageProgressUpdate) => void, totalBytesHint?: number): InstallHandle {
-    return spawnWithProgress(['upgrade', packageId, '-y', '--no-progress'], onProgress, totalBytesHint)
+  upgrade(
+    packageId: string,
+    onProgress: (u: PackageProgressUpdate) => void,
+    totalBytesHint?: number,
+    options?: { installPath?: string; scope?: 'user' | 'machine'; interactive?: boolean }
+  ): InstallHandle {
+    const args = ['upgrade', packageId, '--no-progress']
+    if (!options?.interactive) {
+      args.push('-y')
+    }
+    if (options?.installPath) {
+      args.push('--install-directory', options.installPath)
+    }
+    return spawnWithProgress(args, onProgress, totalBytesHint)
   }
 }
 
@@ -98,9 +122,7 @@ function spawnWithProgress(
   totalBytesHint?: number
 ): InstallHandle {
   const tracker = new ProgressTracker()
-  // choco's own progress bar is disabled (--no-progress) so we drive percentage from
-  // its "Progress: Downloading ... 45%" status lines instead, which are newline-terminated.
-  const child = spawn('choco', args.filter((a) => a !== '--no-progress').concat(['--limit-output']), {
+  const child = spawn('choco', args, {
     windowsHide: true
   })
 
