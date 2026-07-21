@@ -74,7 +74,13 @@ export const uninstallService = {
     return results
   },
 
-  /** Elevated (single UAC prompt) — works for any detected app, catalog or not. */
+  /** Tries unelevated first, only escalates to a single UAC prompt on failure — works for
+   *  any detected app, catalog or not. Order matters: winget actively *refuses* to
+   *  uninstall a user-scope package while the calling process is elevated ("cannot be
+   *  uninstalled when running with administrator privileges"), so going elevated-first
+   *  broke every user-scope uninstall. Machine-scope packages (MSI/HKLM) that genuinely
+   *  need admin still work — they just fail unelevated and fall through to the elevated
+   *  retry below. */
   async uninstall(target: UninstallTarget): Promise<void> {
     const historyId = historyRepo.add({
       appId: target.appId ?? target.packageId,
@@ -87,7 +93,17 @@ export const uninstallService = {
         target.source === 'chocolatey'
           ? ['uninstall', target.packageId, '-y']
           : ['uninstall', '--id', target.packageId, '-e', '--silent', '--disable-interactivity']
-      const { code, reason } = await runElevatedPackageCommand(target.source, args)
+
+      let code = 0
+      let reason = ''
+      try {
+        if (target.source === 'chocolatey') await chocoManager.uninstall(target.packageId)
+        else await wingetManager.uninstall(target.packageId)
+      } catch (unelevatedErr) {
+        const elevated = await runElevatedPackageCommand(target.source, args)
+        code = elevated.code
+        reason = elevated.reason || (unelevatedErr instanceof Error ? unelevatedErr.message : String(unelevatedErr))
+      }
       if (code !== 0) throw new Error(reason ? `${reason} (exit ${code})` : `Uninstall failed (exit ${code})`)
       if (target.appId) installedAppsRepo.remove(target.appId)
       historyRepo.finish(historyId, 'success')

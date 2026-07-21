@@ -147,8 +147,10 @@ function spawnWithProgress(
   // Smooth progress simulation fallback:
   // If choco's redirected stdout doesn't emit progress lines, we smoothly update progress
   // up to 90% in the UI, which will immediately jump to 100% on successful completion.
+  // 1.5 MB/s made every download look throttled regardless of real connection speed;
+  // assume a more realistic modern-broadband rate so the number isn't misleadingly slow.
   const startTime = Date.now()
-  const bytesPerSecond = 1.5 * 1024 * 1024 // assume 1.5 MB/s speed
+  const bytesPerSecond = 8 * 1024 * 1024 // assume 8 MB/s speed
   const size = totalBytesHint ?? 50 * 1024 * 1024 // default 50 MB
   const durationSeconds = size / bytesPerSecond
 
