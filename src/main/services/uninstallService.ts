@@ -26,6 +26,8 @@ async function runElevatedPackageCommand(
   return { code, reason }
 }
 
+import { queueRepo } from '../db/repositories/queue.repo'
+
 export const uninstallService = {
   /** Live scan of everything winget/choco report as installed, cross-referenced against
    *  the catalog so known apps show rich metadata; unmatched packages still show up
@@ -38,7 +40,13 @@ export const uninstallService = {
     if (availability.winget) {
       const wingetList = await wingetManager.listInstalled()
       for (const pkg of wingetList) {
-        const app = APPS.find((a) => a.wingetId === pkg.id)
+        const pkgIdLower = pkg.id.toLowerCase()
+        const app = APPS.find(
+          (a) =>
+            a.wingetId?.toLowerCase() === pkgIdLower ||
+            pkgIdLower.startsWith(a.wingetId?.toLowerCase() + '.') ||
+            (a.wingetId && pkgIdLower === a.wingetId.toLowerCase().split('.')[0])
+        )
         const key = app?.id ?? `winget:${pkg.id}`
         if (seen.has(key)) continue
         seen.add(key)
@@ -56,7 +64,13 @@ export const uninstallService = {
     if (availability.chocolatey) {
       const chocoList = await chocoManager.listInstalled()
       for (const pkg of chocoList) {
-        const app = APPS.find((a) => a.chocoId === pkg.id)
+        const pkgIdLower = pkg.id.toLowerCase()
+        const app = APPS.find(
+          (a) =>
+            a.chocoId?.toLowerCase() === pkgIdLower ||
+            pkgIdLower.startsWith(a.chocoId?.toLowerCase() + '.') ||
+            (a.chocoId && pkgIdLower === a.chocoId.toLowerCase().split('.')[0])
+        )
         const key = app?.id ?? `choco:${pkg.id}`
         if (seen.has(key)) continue
         seen.add(key)
@@ -68,6 +82,15 @@ export const uninstallService = {
           installedAt: installedAppsRepo.get(app?.id ?? '')?.installedAt ?? null,
           source: 'chocolatey'
         })
+      }
+    }
+
+    // Prune stale entries from local DB if they are no longer detected on system
+    const detectedAppIds = new Set(results.map((r) => r.appId).filter(Boolean) as string[])
+    const dbRows = installedAppsRepo.all()
+    for (const row of dbRows) {
+      if (row.appId && !detectedAppIds.has(row.appId)) {
+        installedAppsRepo.remove(row.appId)
       }
     }
 
@@ -105,7 +128,16 @@ export const uninstallService = {
         reason = elevated.reason || (unelevatedErr instanceof Error ? unelevatedErr.message : String(unelevatedErr))
       }
       if (code !== 0) throw new Error(reason ? `${reason} (exit ${code})` : `Uninstall failed (exit ${code})`)
-      if (target.appId) installedAppsRepo.remove(target.appId)
+      
+      // Clean up local installed apps DB and queue records
+      if (target.appId) {
+        installedAppsRepo.remove(target.appId)
+      }
+      const queueItems = queueRepo.all().filter((i) => i.appId === (target.appId ?? target.packageId))
+      for (const item of queueItems) {
+        queueRepo.remove(item.id)
+      }
+
       historyRepo.finish(historyId, 'success')
     } catch (err) {
       historyRepo.finish(historyId, 'failed', err instanceof Error ? err.message : String(err))

@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Minus, Square, X, Sun, Moon, Monitor } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Minus, Square, X, Sun, Moon, Monitor, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { useSettings, useSetSettings } from '../../queries/useSettings'
 import { cn } from '../../lib/utils'
 import type { ThemeMode } from '@shared/types/settings'
@@ -10,6 +10,11 @@ export function TitleBar() {
   const { data: settings } = useSettings()
   const setSettings = useSetSettings()
   const [isMaximized, setIsMaximized] = useState(false)
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null)
+
+  useEffect(() => {
+    window.api.system.isAdmin().then(setIsAdmin).catch(() => setIsAdmin(false))
+  }, [])
 
   const cycleTheme = () => {
     const order: ThemeMode[] = ['system', 'light', 'dark']
@@ -24,6 +29,20 @@ export function TitleBar() {
     <div className="drag flex h-9 shrink-0 items-center justify-between border-b border-subtle bg-black/[0.03] dark:bg-black/20 px-3">
       <div className="flex items-center gap-2 text-xs text-secondary">
         <span className="font-semibold text-primary">AIOforge</span>
+        {isAdmin === true && (
+          <span className="no-drag flex items-center gap-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 dark:text-emerald-400">
+            <ShieldCheck size={11} /> Administrator
+          </span>
+        )}
+        {isAdmin === false && (
+          <button
+            onClick={() => window.api.system.relaunchAsAdmin()}
+            title="Click to relaunch AIOforge with Administrator privileges"
+            className="no-drag flex items-center gap-1 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-600 hover:bg-amber-500/25 dark:text-amber-400"
+          >
+            <ShieldAlert size={11} /> Run as Admin
+          </button>
+        )}
       </div>
       <div className="no-drag flex items-center gap-1">
         <button

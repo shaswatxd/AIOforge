@@ -7,6 +7,7 @@ import type {
   UpgradeCandidate
 } from './IPackageManager'
 import { ProgressTracker, splitProgressChunk } from './progressParser'
+import { isAdmin, runUnelevated } from './elevate'
 
 const COMMON_FLAGS = [
   '--accept-package-agreements',
@@ -132,10 +133,14 @@ export const wingetManager: IPackageManager = {
   },
 
   async uninstall(packageId: string): Promise<void> {
-    // `winget uninstall` doesn't accept install-time flags like --source or the
-    // agreement flags (passing them makes winget print its usage/help and exit
-    // non-zero instead of actually uninstalling) — only the flags below are valid here.
-    const { code, stdout } = await run(['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
+    // `winget uninstall` doesn't accept install-time flags like --source or agreement flags.
+    let { code, stdout } = await run(['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
+    if (code !== 0 && /administrator context|user scope/i.test(stdout) && isAdmin()) {
+      // Winget blocks user-scope uninstalls when running elevated. Drop elevation for this single call.
+      const unel = await runUnelevated('winget', ['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
+      code = unel.code
+      stdout = unel.output
+    }
     if (code !== 0) {
       const reason = summarizeWingetOutput(stdout)
       throw new Error(reason ? `${reason} (exit ${code})` : `winget uninstall failed (exit ${code})`)

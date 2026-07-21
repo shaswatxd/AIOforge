@@ -78,6 +78,32 @@ export function runElevated(command: string, args: string[]): Promise<{ code: nu
   })
 }
 
+import { app } from 'electron'
+
+/** Runs a command without Administrator privileges (drops elevation using Windows trustlevel BASIC_USER).
+ *  Used when winget refuses to uninstall a user-scope package while the calling process is elevated. */
+export function runUnelevated(command: string, args: string[]): Promise<{ code: number; output: string }> {
+  return new Promise((resolve) => {
+    const fullCmd = `runas /trustlevel:0x20000 "${command} ${args.map((a) => `\\"${a}\\"`).join(' ')}"`
+    const child = spawn('cmd.exe', ['/c', fullCmd], { windowsHide: true })
+    let output = ''
+    child.stdout?.on('data', (d) => (output += d.toString()))
+    child.stderr?.on('data', (d) => (output += d.toString()))
+    child.on('error', (err) => resolve({ code: 1, output: err.message }))
+    child.on('close', (code) => resolve({ code: code ?? 1, output }))
+  })
+}
+
+/** Relaunches the current application elevated (with RunAs prompt). */
+export function relaunchAsAdmin(): void {
+  const exePath = app.getPath('exe')
+  const args = process.argv.slice(1)
+  const argList = '@(' + args.map((a) => `'${a.replace(/'/g, "''")}'`).join(',') + ')'
+  const psCommand = `Start-Process -FilePath '${exePath.replace(/'/g, "''")}' -ArgumentList ${argList} -Verb RunAs`
+  spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', psCommand], { detached: true, windowsHide: true })
+  app.quit()
+}
+
 /** Same as runElevated(), but for an arbitrary PowerShell script instead of a fixed
  *  command + args list — the script is passed as -EncodedCommand to sidestep quoting
  *  issues when nesting it inside the outer Start-Process invocation. */

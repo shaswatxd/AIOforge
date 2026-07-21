@@ -18,13 +18,9 @@ win:
       arch:
         - x64
   icon: build/icon.ico
-  # asInvoker: app launches unelevated, matching elevate.ts's per-action UAC design
-  # (single elevated prompt only for the specific winget/choco command that needs it).
-  # requireAdministrator here would force the WHOLE process elevated at all times, which
-  # breaks winget's own uninstall guard — winget refuses to uninstall a user-scope
-  # package while the calling process is elevated ("cannot be uninstalled when running
-  # with administrator privileges"), so every user-scope uninstall would fail.
-  requestedExecutionLevel: asInvoker
+  # requireAdministrator: App requests Administrator privileges on launch so winget,
+  # choco, registry tweaks, and machine-scope operations have necessary permissions.
+  requestedExecutionLevel: requireAdministrator
 nsis:
   # Discord/Slack-style installer: no wizard pages, just a small animated "Installing…"
   # window that installs per-user (no UAC needed for the install step itself) and

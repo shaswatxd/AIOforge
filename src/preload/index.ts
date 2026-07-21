@@ -77,7 +77,9 @@ const api: SetupForgeApi = {
     pickSaveFile: (defaultName) => ipcRenderer.invoke('system:pickSaveFile', defaultName),
     pickOpenFile: () => ipcRenderer.invoke('system:pickOpenFile'),
     openExternal: (url) => ipcRenderer.invoke('system:openExternal', url),
-    getAppVersion: () => ipcRenderer.invoke('system:getAppVersion')
+    getAppVersion: () => ipcRenderer.invoke('system:getAppVersion'),
+    isAdmin: () => ipcRenderer.invoke('system:isAdmin'),
+    relaunchAsAdmin: () => ipcRenderer.invoke('system:relaunchAsAdmin')
   },
   app: {
     checkForUpdates: () => ipcRenderer.invoke('app:checkForUpdates'),

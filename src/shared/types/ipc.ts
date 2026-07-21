@@ -93,6 +93,8 @@ export interface SetupForgeApi {
     pickOpenFile: () => Promise<string | null>
     openExternal: (url: string) => Promise<void>
     getAppVersion: () => Promise<string>
+    isAdmin: () => Promise<boolean>
+    relaunchAsAdmin: () => Promise<void>
   }
   app: {
     checkForUpdates: () => Promise<void>

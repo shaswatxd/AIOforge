@@ -1,4 +1,5 @@
 import { ipcMain, dialog, shell, app, type BrowserWindow } from 'electron'
+import { isAdmin, relaunchAsAdmin } from '../services/packageManager/elevate'
 
 export function registerSystemIpc(getWindow: () => BrowserWindow | null): void {
   ipcMain.handle('system:pickDirectory', async () => {
@@ -34,4 +35,6 @@ export function registerSystemIpc(getWindow: () => BrowserWindow | null): void {
   })
 
   ipcMain.handle('system:getAppVersion', () => app.getVersion())
+  ipcMain.handle('system:isAdmin', () => isAdmin())
+  ipcMain.handle('system:relaunchAsAdmin', () => relaunchAsAdmin())
 }

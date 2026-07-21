@@ -21,8 +21,14 @@ export function AppCard({ app }: { app: AppDefinition }) {
   // "Installed" reflects the real system (a live winget/choco scan), not just apps we
   // personally installed through the queue this session — otherwise anything that was
   // already on the machine before AIOforge existed would still show an Install button.
-  const isInstalled =
-    installedApps?.some((a) => a.appId === app.id) || queue?.some((q) => q.appId === app.id && q.status === 'completed')
+  const isInstalled = Boolean(
+    installedApps?.some(
+      (a) =>
+        a.appId === app.id ||
+        (app.wingetId && a.packageId.toLowerCase() === app.wingetId.toLowerCase()) ||
+        (app.chocoId && a.packageId.toLowerCase() === app.chocoId.toLowerCase())
+    )
+  )
 
   const handleInstall = () => {
     addToQueue.mutate([{ appId: app.id }], {
