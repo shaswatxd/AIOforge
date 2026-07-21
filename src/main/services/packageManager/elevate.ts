@@ -44,36 +44,37 @@ export function runElevated(command: string, args: string[]): Promise<{ code: nu
   }
 
   return new Promise((resolve, reject) => {
-    const dir = mkdtempSync(join(tmpdir(), 'aioforge-'))
+    const dir = mkdtempSync(join(tmpdir(), 'aioforge-elev-'))
     const outFile = join(dir, 'out.txt')
     const errFile = join(dir, 'err.txt')
-    
-    // Construct command execution line inside cmd.exe wrapper to perform redirection inside the elevated context,
-    // avoiding the incompatible combination of -Verb RunAs and -RedirectStandardOutput in Start-Process.
-    const cmdArgs = [
-      '/c',
-      `""${command}" ` + args.map((a) => `"${a.replace(/"/g, '\\"')}"`).join(' ') + ` > "${outFile}" 2> "${errFile}""`
-    ]
-    const argList = '@(' + cmdArgs.map((a) => `'${a.replace(/'/g, "''")}'`).join(',') + ')'
-    const psCommand =
-      `$p = Start-Process -FilePath 'cmd.exe' -ArgumentList ${argList} -Verb RunAs -Wait -PassThru -WindowStyle Hidden; ` +
-      `exit $p.ExitCode`
+    const codeFile = join(dir, 'code.txt')
 
-    const child = spawn('powershell', ['-NoProfile', '-NonInteractive', '-Command', psCommand], { windowsHide: true })
+    const formattedArgs = args.map((a) => (a.includes(' ') ? `"${a.replace(/"/g, '""')}"` : a)).join(' ')
+    const fullCmd = `${command} ${formattedArgs}`.trim()
+
+    const script = `
+$cmdArgs = '/c ${fullCmd.replace(/'/g, "''")} > "${outFile.replace(/\\/g, '\\\\')}" 2> "${errFile.replace(/\\/g, '\\\\')}" & echo %errorlevel% > "${codeFile.replace(/\\/g, '\\\\')}"'
+$p = Start-Process -FilePath 'cmd.exe' -ArgumentList $cmdArgs -Verb RunAs -Wait -PassThru -WindowStyle Hidden
+exit $p.ExitCode
+`
+
+    const encoded = Buffer.from(script, 'utf16le').toString('base64')
+    const child = spawn('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], { windowsHide: true })
     child.on('error', reject)
     child.on('close', (code) => {
       let output = ''
+      let exitCode = code ?? 1
       try {
-        output = readFileSync(outFile, 'utf-8') + readFileSync(errFile, 'utf-8')
-      } catch {
-        // Files may not exist if the user cancelled the UAC prompt — fine, code will be non-zero.
-      }
+        output = (readFileSync(outFile, 'utf-8') + readFileSync(errFile, 'utf-8')).trim()
+      } catch {}
+      try {
+        const c = parseInt(readFileSync(codeFile, 'utf-8').trim(), 10)
+        if (!isNaN(c)) exitCode = c
+      } catch {}
       try {
         rmSync(dir, { recursive: true, force: true })
-      } catch {
-        // best-effort cleanup
-      }
-      resolve({ code: code ?? 1, output })
+      } catch {}
+      resolve({ code: exitCode, output })
     })
   })
 }

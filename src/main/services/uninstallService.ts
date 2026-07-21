@@ -123,9 +123,13 @@ export const uninstallService = {
         if (target.source === 'chocolatey') await chocoManager.uninstall(target.packageId)
         else await wingetManager.uninstall(target.packageId)
       } catch (unelevatedErr) {
+        const errMsg = unelevatedErr instanceof Error ? unelevatedErr.message : String(unelevatedErr)
+        if (/user scope|2316632189|0x8a15001d/i.test(errMsg)) {
+          throw unelevatedErr
+        }
         const elevated = await runElevatedPackageCommand(target.source, args)
         code = elevated.code
-        reason = elevated.reason || (unelevatedErr instanceof Error ? unelevatedErr.message : String(unelevatedErr))
+        reason = elevated.reason || errMsg
       }
       if (code !== 0) throw new Error(reason ? `${reason} (exit ${code})` : `Uninstall failed (exit ${code})`)
       

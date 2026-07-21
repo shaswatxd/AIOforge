@@ -133,14 +133,27 @@ export const wingetManager: IPackageManager = {
   },
 
   async uninstall(packageId: string): Promise<void> {
-    // `winget uninstall` doesn't accept install-time flags like --source or agreement flags.
-    let { code, stdout } = await run(['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
-    if (code !== 0 && (code === 2316632189 || /administrator|user scope|2316632189|0x8a15001d/i.test(stdout)) && isAdmin()) {
-      // Winget blocks user-scope uninstalls when running elevated. Drop elevation for this single call.
-      const unel = await runUnelevated('winget', ['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
-      code = unel.code
-      stdout = unel.output
+    const uninstallArgs = ['uninstall', '--id', packageId, '-e', '--silent', '--accept-source-agreements', '--disable-interactivity', '--force']
+    let { code, stdout } = await run(uninstallArgs)
+
+    if (code !== 0 && /no package found/i.test(stdout)) {
+      const altArgs = ['uninstall', packageId, '--silent', '--accept-source-agreements', '--disable-interactivity', '--force']
+      const retry = await run(altArgs)
+      if (retry.code === 0) return
+      code = retry.code
+      stdout = retry.stdout
     }
+
+    if (code !== 0 && isAdmin()) {
+      // Winget blocks user-scope uninstalls when running elevated. Drop elevation for this single call.
+      const unel = await runUnelevated('winget', uninstallArgs)
+      if (unel.code === 0) return
+      if (unel.output) {
+        code = unel.code
+        stdout = unel.output
+      }
+    }
+
     if (code !== 0) {
       const reason = summarizeWingetOutput(stdout)
       throw new Error(reason ? `${reason} (exit ${code})` : `winget uninstall failed (exit ${code})`)
