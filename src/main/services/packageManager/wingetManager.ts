@@ -135,7 +135,7 @@ export const wingetManager: IPackageManager = {
   async uninstall(packageId: string): Promise<void> {
     // `winget uninstall` doesn't accept install-time flags like --source or agreement flags.
     let { code, stdout } = await run(['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
-    if (code !== 0 && /administrator context|user scope/i.test(stdout) && isAdmin()) {
+    if (code !== 0 && (code === 2316632189 || /administrator|user scope|2316632189|0x8a15001d/i.test(stdout)) && isAdmin()) {
       // Winget blocks user-scope uninstalls when running elevated. Drop elevation for this single call.
       const unel = await runUnelevated('winget', ['uninstall', '--id', packageId, '-e', '--silent', '--disable-interactivity'])
       code = unel.code

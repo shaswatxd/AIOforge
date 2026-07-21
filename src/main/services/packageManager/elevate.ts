@@ -80,17 +80,59 @@ export function runElevated(command: string, args: string[]): Promise<{ code: nu
 
 import { app } from 'electron'
 
-/** Runs a command without Administrator privileges (drops elevation using Windows trustlevel BASIC_USER).
+/** Runs a command without Administrator privileges (drops elevation using Shell.Application COM object via PowerShell).
  *  Used when winget refuses to uninstall a user-scope package while the calling process is elevated. */
 export function runUnelevated(command: string, args: string[]): Promise<{ code: number; output: string }> {
-  return new Promise((resolve) => {
-    const fullCmd = `runas /trustlevel:0x20000 "${command} ${args.map((a) => `\\"${a}\\"`).join(' ')}"`
-    const child = spawn('cmd.exe', ['/c', fullCmd], { windowsHide: true })
-    let output = ''
-    child.stdout?.on('data', (d) => (output += d.toString()))
-    child.stderr?.on('data', (d) => (output += d.toString()))
-    child.on('error', (err) => resolve({ code: 1, output: err.message }))
-    child.on('close', (code) => resolve({ code: code ?? 1, output }))
+  if (!isAdmin()) {
+    return new Promise((resolve) => {
+      const child = spawn(command, args, { windowsHide: true })
+      let output = ''
+      child.stdout?.on('data', (d) => (output += d.toString()))
+      child.stderr?.on('data', (d) => (output += d.toString()))
+      child.on('error', (err) => resolve({ code: 1, output: err.message }))
+      child.on('close', (code) => resolve({ code: code ?? 1, output }))
+    })
+  }
+
+  return new Promise((resolve, reject) => {
+    const dir = mkdtempSync(join(tmpdir(), 'aioforge-unel-'))
+    const outFile = join(dir, 'out.txt')
+    const errFile = join(dir, 'err.txt')
+    const codeFile = join(dir, 'code.txt')
+
+    const formattedArgs = args.map((a) => (a.includes(' ') ? `"${a.replace(/"/g, '""')}"` : a)).join(' ')
+    const fullCmd = `${command} ${formattedArgs}`.trim()
+
+    const script = `
+$s = New-Object -ComObject Shell.Application
+$cmdArgs = '/c ${fullCmd.replace(/'/g, "''")} > "${outFile.replace(/\\/g, '\\\\')}" 2> "${errFile.replace(/\\/g, '\\\\')}" & echo %errorlevel% > "${codeFile.replace(/\\/g, '\\\\')}"'
+$s.ShellExecute('cmd.exe', $cmdArgs, '', '', 0)
+
+$waited = 0
+while (-not (Test-Path '${codeFile.replace(/'/g, "''")}') -and $waited -lt 600) {
+    Start-Sleep -Milliseconds 100
+    $waited += 1
+}
+`
+
+    const encoded = Buffer.from(script, 'utf16le').toString('base64')
+    const child = spawn('powershell', ['-NoProfile', '-NonInteractive', '-EncodedCommand', encoded], { windowsHide: true })
+    child.on('error', reject)
+    child.on('close', () => {
+      let output = ''
+      let code = 1
+      try {
+        output = (readFileSync(outFile, 'utf-8') + readFileSync(errFile, 'utf-8')).trim()
+      } catch {}
+      try {
+        code = parseInt(readFileSync(codeFile, 'utf-8').trim(), 10)
+        if (isNaN(code)) code = 1
+      } catch {}
+      try {
+        rmSync(dir, { recursive: true, force: true })
+      } catch {}
+      resolve({ code, output })
+    })
   })
 }
 
